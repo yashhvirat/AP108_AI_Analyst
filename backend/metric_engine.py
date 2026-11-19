@@ -1,5 +1,6 @@
 import re
 from backend.aliases import ALIASES
+from metadata import get_measures
 
 BASE_FILTER = "'ERR'[Ambulance/Feeder vehicle] = \"Ambulance\", 'ERR'[Ambulance Base Location] <> \"Backup\""
 
@@ -11,7 +12,7 @@ def normalize(text):
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
-    
+
 
 def load_metrics():
 
@@ -34,6 +35,7 @@ def load_metrics():
         }
 
     return metrics
+
 
 METRICS = load_metrics()
 
