@@ -3,11 +3,7 @@ from backend.aliases import ALIASES
 
 BASE_FILTER = "'ERR'[Ambulance/Feeder vehicle] = \"Ambulance\", 'ERR'[Ambulance Base Location] <> \"Backup\""
 
-import csv
 import re
-from pathlib import Path
-ROOT = Path(__file__).resolve().parent.parent
-MEASURES_FILE = ROOT / "measures.csv"
 
 def normalize(text):
     text = str(text).lower()
@@ -21,21 +17,21 @@ def load_metrics():
 
     metrics = {}
 
-    with open(MEASURES_FILE, encoding="utf-8-sig") as f:
+    df = get_measures()
 
-        for row in csv.DictReader(f):
+    for _, row in df.iterrows():
 
-            measure_name = row["Name"].strip()
+        measure_name = str(row["[Name]"]).strip()
 
-            if not measure_name:
-                continue
+        if not measure_name:
+            continue
 
-            metrics[measure_name] = {
-                "synonyms": [normalize(measure_name)],
-                "measure": measure_name,
-                "display_name": measure_name,
-                "type": "measure"
-            }
+        metrics[measure_name] = {
+            "synonyms": [normalize(measure_name)],
+            "measure": measure_name,
+            "display_name": measure_name,
+            "type": "measure"
+        }
 
     return metrics
 
