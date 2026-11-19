@@ -1,0 +1,548 @@
+ID,TableID,ExplicitName,ExplicitDataType,Description,IsHidden,SourceColumn,FormatString
+11,10,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+120,10,Source.Name,2,,False,Source.Name,
+121,10,SI No.,8,,False,SI No.,0
+122,10,Vehicle Id,2,,False,Vehicle Id,
+123,10,Event Id,2,,False,Event Id,
+124,10,Calltime,9,,False,Calltime,General Date
+125,10,Caller Number,2,,False,Caller Number,
+126,10,Caller Name,2,,False,Caller Name,
+127,10,Patient First Name,2,,False,Patient First Name,
+128,10,Patient Last Name,2,,False,Patient Last Name,
+129,10,DIstress Contact NO,2,,False,DIstress Contact NO,
+130,10,Caller Address,2,,False,Caller Address,
+131,10,EMS Narrative,2,,False,EMS Narrative,
+132,10,SUB Event Marked By DO,2,,False,SUB Event Marked By DO,
+133,10,SUB Event Marked By MDT,2,,False,SUB Event Marked By MDT,
+134,10,DO Marked Address,2,,False,DO Marked Address,
+135,10,Drop Address(MDT),2,,False,Drop Address(MDT),
+136,10,DO NAME,2,,False,DO NAME,
+137,10,Ambulance Base Location,2,,False,Ambulance Base Location,
+138,10,Delivery Status,2,,False,Delivery Status,
+139,10,Hospital To Hospital Transfer,11,,False,Hospital To Hospital Transfer,"""TRUE"";""TRUE"";""FALSE"""
+140,10,Vehicle Callsign,2,,False,Vehicle Callsign,
+141,10,Vehicle Eta,2,,False,Vehicle Eta,
+142,10,Routed Time,9,,False,Routed Time,General Date
+143,10,Assign Time,9,,False,Assign Time,General Date
+144,10,Accepted Time,9,,False,Accepted Time,General Date
+145,10,On Action Time,9,,False,On Action Time,General Date
+146,10,At Scene Tme,9,,False,At Scene Tme,General Date
+147,10,Enroute Time,9,,False,Enroute Time,General Date
+148,10,Hospital Reached Time,9,,False,Hospital Reached Time,General Date
+149,10,Hospital Handoverd Time,9,,False,Hospital Handoverd Time,General Date
+150,10,Mdt Abandoned Time,9,,False,Mdt Abandoned Time,General Date
+151,10,Dispatch Over Time,2,,False,Dispatch Over Time,
+152,10,Vehicle Actual Duration Reach,2,,False,Vehicle Actual Duration Reach,
+153,10,Total Time To Complete,2,,False,Total Time To Complete,
+154,10,ATR Remarks,2,,False,ATR Remarks,
+155,10,District Name,2,,False,District Name,
+156,10,Mandal Name,2,,False,Mandal Name,
+157,10,Village Name,2,,False,Village Name,
+158,10,Distress Age,2,,False,Distress Age,
+159,10,Gender Name,2,,False,Gender Name,
+160,10,MDT Abandoned Reason,2,,False,MDT Abandoned Reason,
+161,10,PNA Reason,2,,False,PNA Reason,
+162,10,Ambulance/Feeder vehicle,1,,False,,
+163,10,DO remarks trimmed,1,,False,,
+168,10,GH secs.,6,,False,,0
+169,10,GH mins.,1,,False,,
+170,10,Event GH (hrs),1,,False,,
+171,10,GH grouping,1,,False,,
+172,10,ART Eligible,1,,False,,
+173,10,ART secs.,1,,False,,0
+174,10,ART mins.,1,,False,,
+176,10,At Scene to Hosp Reach (sec),1,,False,,0
+177,10,At Scene to Hosp Reach (mins),1,,False,,
+178,10,Hosp reach cases,1,,False,,"#,0"
+179,10,At Scene to Hosp eligible,1,,False,,0
+181,10,Actionable calls,1,,False,,"#,0"
+182,10,Ambulance Assigned,1,,False,,"#,0"
+183,10,DO Remarks grouping,1,,False,,
+184,10,Ambulance not assigned,1,,False,,0
+185,10,Mobile & Date,1,,False,,
+186,10,Event result (ERR),1,,False,,
+187,10,Event stages,1,,False,,
+188,10,GH Eligible,1,,False,,
+189,10,Addressed actionable calls,1,,False,,
+191,10,Call Hour (12-hour),1,,False,,
+192,10,Hour,1,,False,,0
+193,10,Locality (BL),1,,False,,
+194,10,ART honored,1,,False,,"#,0"
+196,10,IFT Label,1,,False,,
+197,10,Indirect successful assignments,1,,False,,0
+198,10,Disptaches direct & indirect,1,,False,,0
+199,10,Ambulance Already assigned (c),1,,False,,0
+200,10,Failed dispatch of ambulance,1,,False,,0
+201,10,Assign number,1,,False,,
+202,10,Caller Base Location,1,,False,,
+203,10,Match Base Locations,1,,False,,0
+204,10,IFT Analaysis,1,,False,,
+206,10,IFT_Index,1,,False,,"#,0"
+207,10,IFT_Boundary,1,,False,,0
+208,10,IFT_CallDate,1,,False,,General Date
+211,10,Missed Cases Due to IFT,1,,False,,"#,0"
+212,10,Accepted Flag,1,,False,,0
+213,10,Assigned Flag,1,,False,,"#,0"
+214,10,On Action Flag,1,,False,,0
+215,10,Enroute Flag,1,,False,,0
+216,10,At Scene Flag,1,,False,,0
+217,10,Hospital Reached Flag,1,,False,,0
+218,10,Calltime Flag,1,,False,,0
+219,10,MDT Available Flag,1,,False,,0
+222,10,GH group sorting,1,,False,,0
+223,10,At Scene Closure,1,,False,,"#,0"
+224,10,MDT AVBL Flag,1,,False,,0
+225,10,MDT Used Flag,1,,False,,0
+226,10,SUB Event Marked By CO,2,,False,SUB Event Marked By CO,
+227,10,Drop Address(DO),2,,False,Drop Address(DO),
+228,10,GH hh:mm:ss,1,,False,,hh:nn:ss
+229,10,ART Shortfall,1,,False,,
+230,10,GH Shortfall,1,,False,,
+231,10,Not Addressed actionable calls,1,,False,,"#,0"
+232,10,District Final,1,,False,,
+233,10,Ambulance Base Location (null),1,,False,,
+234,10,PNA Reason grouping,1,,False,,
+235,10,Hospital Handover Flag,1,,False,,0
+236,10,MDT Partially Used Flag,1,,False,,0
+244,10,Abandoned After Dispatch,1,,False,,"#,0"
+245,10,MDT Abandoned Reason new,1,,False,,
+246,10,Accepted/OnAction/MDTAbdTime Flag,1,,False,,0
+247,10,ATR Remarks Trimmed,1,,False,,
+248,10,GH grouping 2,1,,False,,
+249,10,GH group 2 sorting,1,,False,,0
+250,10,Special Base Locations Flag,1,,False,,0
+251,10,Incorrect MDT Stamp Flag,1,,False,,0
+252,10,Assign to At Scene (mins),1,,False,,0
+253,10,KMS Bucket,1,,False,,
+254,10,KMS Bucket Sort,1,,False,,0
+255,10,GH (Hours),1,,False,,
+256,10,Time Bucket,1,,False,,
+257,10,Time Bucket Sort,1,,False,,0
+258,10,Speed (kmph),1,,False,,"#,0"
+259,10,Speed Bucket,1,,False,,
+260,10,Speed Bucket Sort,1,,False,,0
+261,10,1. On Action ODO,1,,False,,"#,0"
+262,10,3. Hospital Reached ODO,1,,False,,"#,0"
+264,10,Fuel Amount - One Way (Approx),1,,False,,"#,0"
+265,10,Range of KMS,1,,False,,
+266,10,Range of KMS Sort,1,,False,,0
+267,10,IFT cases KMs availability,1,,False,,"#,0"
+268,10,Call Hour Bin,1,,False,,
+269,10,Hour group,1,,False,,
+270,10,2. At Scene ODO,1,,False,,"#,0"
+271,10,4. Back to Base ODO,1,,False,,"#,0"
+272,10,Valid ODO Flag,1,,False,,0
+273,10,Govt - Pvt,1,,False,,
+274,10,MDT ODO Completeness,1,,False,,
+275,10,KMS Travelled (MDT) Two Way,1,,False,,"#,0"
+276,10,ERO Remarks,2,,False,ERO Remarks,
+277,10,ERO Marked Address,2,,False,ERO Marked Address,
+278,10,ERO NAME,2,,False,ERO NAME,
+279,10,Date,9,,False,Date,Short Date
+280,10,Date Modified,9,,False,Date Modified,General Date
+281,10,UID (ODO),1,,False,,
+282,10,EMT Flag,1,,False,,0
+283,10,Vehicle Assigned Number,1,,False,,
+284,10,Pick Facility Type,2,,False,Pick Facility Type,
+285,10,Drop Facility Type,2,,False,Drop Facility Type,
+286,10,Assigned order,1,,False,,0
+287,10,KMS Eligibility,1,,False,,
+288,10,5. Max Closing ODO Two Way,1,,False,,"#,0"
+289,10,Region Lookup,1,,False,,
+290,10,District (Caller),1,,False,,
+291,10,Range of KMS till At Scene,1,,False,,
+292,10,Range of KMS till At Scene Sort,1,,False,,0
+293,10,KMS Travelled (MDT) Raw Two Way,1,,False,,"#,0"
+294,10,Range of KMS Scene to Hosp,1,,False,,
+295,10,Range of KMS Scene to Hosp Sort,1,,False,,0
+296,10,Range of KMS Hosp to Base,1,,False,,
+297,10,Range of KMS Hosp to Base Sort,1,,False,,0
+298,10,Abandoned Status,1,,False,,
+299,10,Drop Facility final,2,,False,Drop Facility final,
+300,10,Hospital pick type,2,,False,Hospital pick type,
+302,10,Hospital drop type,2,,False,Hospital drop type,
+304,10,Drop Type Hierarchy,1,,False,,
+305,10,Hospital Reach KMs >30 Flag,1,,False,,0
+306,10,Neonatal Flag,1,,False,,
+26569,10,GH Shortfall sort,1,,False,,0
+132347,10,Drop Type Lookup,1,,False,,
+132670,10,Pick Type Lookup,1,,False,,
+184504,10,Range of KMS (Abandoned),1,,False,,
+184558,10,Range of KMS (Abandoned) sort,1,,False,,0
+205048,10,5. Max Closing ODO One Way,1,,False,,
+205151,10,KMS Travelled (MDT) One Way,1,,False,,"#,0"
+205294,10,Range of KMS - IFT Scene to Hosp One Way,1,,False,,
+262426,10,Hospital pick ranking,1,,False,,0
+262480,10,Hospital drop ranking,1,,False,,0
+278443,10,Fuel Amount - Two Way (Approx),1,,False,,"#,0"
+435897,10,One Way vs Return KMs MDT Diff Flag (10% buffer),1,,False,,0.0%;-0.0%;0.0%
+435982,10,KMS Travelled Return (MDT),1,,False,,"#,0"
+455567,10,PNA Reason New,1,,False,,
+455771,10,GH mins. Delay,1,,False,,
+455969,10,GH Crossed due to Accepted Time >2min & On Action Time >2min Flag,1,,False,,"#,0"
+456131,10,ART mins. Delay,1,,False,,
+456214,10,ART Crossed due to Accepted Time >2min & On Action Time >2min Flag,1,,False,,"#,0"
+477332,10,Date Shift,1,,False,,
+477767,10,GH Delay due to Accepted/On Action/Enroute Time Delay Improve Flag,1,,False,,0
+478628,10,EMT EMP Id,2,,False,,
+478682,10,PILOT EMP Id,2,,False,,
+478768,10,EMT Name,1,,False,,
+478822,10,PILOT Name,1,,False,,
+478901,10,GH mins. Delay (61 min),1,,False,,
+478956,10,GH Delay due to Accepted/On Action/Enroute Time Delay Improve Flag (61 min),1,,False,,0
+479010,10,Accept Time Bin,1,,False,,
+479106,10,On Action Time Bin,1,,False,,
+481120,10,Enroute Time Bin,1,,False,,
+482932,10,MDT_REMARKS,2,,False,MDT_REMARKS,
+499796,10,Delayed Reasons,1,,False,,
+502260,10,GH Achieved,1,,False,,
+502336,10,ART Honored Yes/No,1,,False,,
+515274,10,ART hh:mm:ss,1,,False,,hh:nn:ss
+536205,10,Accept Time Bin 2,1,,False,,
+536259,10,On Action Time Bin 2,1,,False,,
+536313,10,Enroute Time Bin 2,1,,False,,
+549389,10,ART Crossed due to Accepted Time >2 min Flag,1,,False,,0
+549445,10,GH Crossed due to Accepted Time >2 min Flag,1,,False,,0
+549502,10,ART Crossed due to On Action Time >2 min Flag,1,,False,,0
+549558,10,GH Crossed due to On Action Time >2 min Flag,1,,False,,0
+549689,10,GH Crossed due to Enroute Time >10 min Flag,1,,False,,0
+572510,10,acknowldge_read_start,2,,False,acknowldge_read_start,
+572511,10,acknowldge_read_end,2,,False,acknowldge_read_end,
+572512,10,atscene_odo_start,2,,False,atscene_odo_start,
+572513,10,atscene_odo_end,2,,False,atscene_odo_end,
+572514,10,reached_to_hospital_read_start,2,,False,reached_to_hospital_read_start,
+572515,10,reached_to_hospital_read_end,2,,False,reached_to_hospital_read_end,
+572516,10,back_to_base_read_start,2,,False,back_to_base_read_start,
+572517,10,back_to_base_read_end,2,,False,back_to_base_read_end,
+594095,10,MDT ODO Stamp Completeness,1,,False,,
+608907,10,AHT Eligible,1,,False,,
+662761,10,Private Hospital Location,1,,False,,
+662839,10,Selected Private Hospitals,1,,False,,0
+695840,10,Accept Time Bin sort,1,,False,,0
+696126,10,On Action Time Bin sort,1,,False,,0
+696223,10,Enroute Time Bin sort,1,,False,,0
+707951,10,Next Assign Time,9,,False,Next Assign Time,General Date
+714372,10,Current Assign - Next Assign Diff (mins),1,,False,,
+714427,10,Back to Base Stamp Missed IFT Flag,1,,False,,"#,0"
+794624,10,Hopital Reach - Next Assign Diff (hh:mm:ss),1,,False,,
+836568,10,Private Hospital District,1,,False,,
+14,13,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+307,13,,1,,False,[Date],dd-mm-yyyy
+308,13,,1,,False,[Year],0
+309,13,,1,,False,[Quarter],
+310,13,,1,,False,[Month Number],0
+313,13,,1,,False,[Week Number],0
+314,13,,1,,False,[Year-Week],
+315,13,,1,,False,[Week Start],General Date
+316,13,,1,,False,[Week End],General Date
+317,13,,1,,False,[Day],0
+319,13,Week Sort,1,,False,,0
+320,13,Formatted Date,1,,False,,
+321,13,Week in Month,1,,False,,
+322,13,Month Sort,1,,False,,0
+324,13,Formatted Date 2,1,,False,,
+325,13,,1,,False,[Month Full],
+326,13,Day name,1,,False,,
+327,13,Day Sort,1,,False,,0
+342797,13,,9,,False,[Month & Year Full],Long Date
+368799,13,Date Availability (ODO),1,,False,,0
+377188,13,,1,,False,[Month & Year],
+377845,13,,1,,False,[Month],
+461112,13,Month Start,1,,False,,General Date
+17,16,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+329,16,Refresh_IST,2,,True,Refresh_IST,
+20,19,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+330,19,,1,,False,[Locality],
+331,19,,1,,False,[SortOrder],0
+332,19,,1,,False,[BenchMark],0
+23,22,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+333,22,,1,,False,ERR[Mobile & Date],
+334,22,,1,,False,ERR[Date],Short Date
+335,22,,1,,False,[Total],0
+336,22,,1,,False,[Success],0
+337,22,,1,,False,[Failure],0
+338,22,Event result,1,,False,,
+26,25,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+339,25,Sl No.,8,,False,Sl No.,0
+340,25,Project Name,2,,False,Project Name,
+341,25,Region,2,,False,Region,
+342,25,District Code,2,,False,District Code,
+343,25,District Name,2,,False,District Name,
+344,25,Mandal Name,2,,False,Mandal Name,
+345,25,Base Location,2,,False,Base Location,
+346,25,OE Name,2,,False,OE Name,
+347,25,Contact Number,2,,False,Contact Number,
+348,25,District Manager,2,,False,District Manager,
+349,25,Contact Number2,2,,False,Contact Number2,
+350,25,Vehicle Number,2,,False,Vehicle Number,
+351,25,New/Old,2,,False,New/Old,
+352,25,Vehicle Year,8,,False,Vehicle Year,0
+353,25,Vehicle Model,2,,False,Vehicle Model,
+354,25,Regular/Backup,2,,False,Regular/Backup,
+355,25,Locality,2,,False,Locality,
+356,25,ALS/BLS,2,,False,ALS/BLS,
+357,25,Segment Code,2,,False,Segment Code,
+358,25,Service Code,2,,False,Service Code,
+359,25,Special Base Locations Flag,1,,False,,0
+360,25,Chassis number,2,,False,Chassis number,
+361,25,Engine Number,2,,False,Engine Number,
+362,25,Group,2,,False,Group,
+363,25,Source.Name,2,,False,Source.Name,
+364,25,Date Modified,9,,False,Date Modified,General Date
+365,25,Vehicle Type,2,,False,Vehicle Type,
+102306,25,Divisions,2,,False,Divisions,
+29,28,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+367,28,,1,,False,Calender[Date],Short Date
+368,28,,1,,False,[Year-Month],
+369,28,,1,,False,Calender[Month Sort],0
+379145,28,,1,,False,Calender[Month & Year],
+32,31,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+370,31,Source.Name,2,,False,Source.Name,
+371,31,VEHICLE_ID,2,,False,VEHICLE_ID,
+372,31,EVENT_ID,2,,False,EVENT_ID,
+373,31,On Action ODO,8,,False,On Action ODO,0
+374,31,Scene ODO,8,,False,Scene ODO,0
+375,31,Hospital Reached ODO,8,,False,Hospital Reached ODO,0
+376,31,back_to_base_ODO,8,,False,back_to_base_ODO,0
+377,31,lmei.UPDATED_TIME,9,,False,lmei.UPDATED_TIME,General Date
+378,31,Date,9,,False,Date,Short Date
+381,31,MIN ODO,1,,False,,"#,0"
+382,31,MAX ODO,1,,False,,"#,0"
+383,31,KMS,1,,False,,0
+384,31,UID,1,,False,,
+385,31,How Many Stamps,1,,False,,0
+386,31,Date Modified,9,,False,Date Modified,General Date
+583336,31,acknowldge_read_start,2,,False,acknowldge_read_start,
+583337,31,atscene_odo_start,2,,False,atscene_odo_start,
+583338,31,reached_to_hospital_read_start,2,,False,reached_to_hospital_read_start,
+583339,31,back_to_base_read_start,2,,False,back_to_base_read_start,
+35,34,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+387,34,Source.Name,2,,False,Source.Name,
+388,34,Sl. No.,8,,False,Sl. No.,0
+389,34,Vehicle Id,2,,False,Vehicle Id,
+390,34,District Name,2,,False,District Name,
+391,34,Mandal Name,2,,False,Mandal Name,
+392,34,Base Location,2,,False,Base Location,
+393,34,Maintenance Type,2,,False,Maintenance Type,
+394,34,Off Road Reason,2,,False,Off Road Reason,
+395,34,Offroad Remarks,2,,False,Offroad Remarks,
+396,34,Off Road DateTime,9,,False,Off Road DateTime,General Date
+397,34,On Road Date Time,9,,False,On Road Date Time,General Date
+398,34,Offroad Duration,2,,False,Offroad Duration,
+399,34,Date,9,,False,Date,Short Date
+400,34,Off Road Diff,1,,False,,0
+401,34,Duration Bucket,1,,False,,
+402,34,Duration Bucket Sort,1,,False,,0
+403,34,Off Road Date,9,,False,Off Road Date,Short Date
+404,34,On Road Date,9,,False,On Road Date,Short Date
+405,34,Date Modified,9,,False,Date Modified,General Date
+184649,34,Callsign,2,,False,Callsign,
+184650,34,Vehicle Sub Status,2,,False,Vehicle Sub Status,
+184651,34,Updated By,2,,False,Updated By,
+53,52,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+487,52,S.No,8,,False,S.No,0
+488,52,VehicleNo,2,,False,VehicleNo,
+489,52,District,2,,False,District,
+490,52,Division,2,,False,Division,
+491,52,Location/ Mandal,2,,False,Location/ Mandal,
+492,52,Petro Card Number,2,,False,Petro Card Number,
+493,52,Distance from Base location to Filling Station,2,,False,Distance from Base location to Filling Station,
+494,52,Name of the Filling station,2,,False,Name of the Filling station,
+495,52,Name of the Filling Location/ Dealer code,2,,False,Name of the Filling Location/ Dealer code,
+496,52,DEO/EMT/OE Name,2,,False,DEO/EMT/OE Name,
+497,52,Pilot /Driver Name,2,,False,Pilot /Driver Name,
+498,52,Contact No,2,,False,Contact No,
+499,52,Fuel Filling Date (DD-MMM-YY),9,,False,Fuel Filling Date (DD-MMM-YY),Long Date
+500,52,Fuel Previous filling Odometer Reading,8,,False,Fuel Previous filling Odometer Reading,0
+501,52,Fuel Current filling Odometer Reading,8,,False,Fuel Current filling Odometer Reading,0
+502,52,KMS running,8,,False,KMS running,"#,0"
+503,52,Fuel Quantity,8,,False,Fuel Quantity,"#,0.00"
+504,52,Fuel Amount,8,,False,Fuel Amount,"#,0.00"
+505,52,Cost / Lit.,8,,False,Cost / Lit.,
+506,52,KMPL,8,,False,KMPL,"#,0.00"
+507,52,Base Location,1,,False,,
+508,52,Transection ID (On Bill),2,,False,Transection ID (On Bill),
+509,52,Card Swipe Status Swiped /Pending,2,,False,Card Swipe Status Swiped /Pending,
+510,52,Project Name,2,,False,Project Name,
+511,52,Name,2,,False,Name,
+512,52,Source.Name,2,,False,Source.Name,
+513,52,Date Modified,9,,False,Date Modified,General Date
+514,52,District (BL),1,,False,,
+56,55,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+515,55,,1,,False,Vehicles Master Database[District Name],
+516,55,,1,,False,Vehicles Master Database[Mandal Name],
+517,55,,1,,False,Vehicles Master Database[Base Location],
+518,55,,1,,False,Vehicles Master Database[Locality],
+519,55,Special Base Locations Flag,1,,False,,0
+59,58,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+520,58,District,1,,False,Vehicles Master Database[District Name],
+521,58,,1,,False,[Region],
+62,61,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+522,61,,1,,False,[Bin],
+523,61,,1,,False,[Min],
+524,61,,1,,False,[Max],
+525,61,,1,,False,[Sort],0
+65,64,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+526,64,Source.Name,2,,False,Source.Name,
+527,64,UID,2,,False,UID,
+528,64,S No,8,,False,S No,0
+529,64,Project,2,,False,Project,
+530,64,Date,9,,False,Date,Short Date
+531,64,District,2,,False,District,
+532,64,Division,2,,False,Division,
+533,64,Mandal,2,,False,Mandal,
+534,64,Vehicle no.,2,,False,Vehicle no.,
+535,64,Vehicle Type,2,,False,Vehicle Type,
+536,64,Opening ODO,8,,False,Opening ODO,"#,0"
+537,64,Closing ODO,8,,False,Closing ODO,"#,0"
+538,64,KMS,8,,False,KMS,"#,0"
+539,64,Date Modified,9,,False,Date Modified,General Date
+540,64,KMs range,1,,False,,
+541,64,KMs range sort,1,,False,,0
+542,64,Segment,1,,False,,
+68,67,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+543,67,Source.Name,2,,False,Source.Name,
+544,67,Project,2,,False,Project,
+545,67,Vehicle,2,,False,Vehicle,
+546,67,Device ID,2,,False,Device ID,
+547,67,Kms travelled,8,,False,Kms travelled,
+548,67,Pings,8,,False,Pings,0
+549,67,First ping (IST),9,,False,First ping (IST),General Date
+550,67,Last ping (IST),9,,False,Last ping (IST),General Date
+551,67,Date Modified,9,,False,Date Modified,General Date
+71,70,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+552,70,,1,,False,ERR[UID (ODO)],
+553,70,,1,,False,[Segment],
+74,73,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+554,73,Vehicle ID,2,,False,Vehicle ID,
+555,73,District,2,,False,District,
+556,73,Date,9,,False,Date,Short Date
+557,73,Manual Opening ODO,8,,False,Manual Opening ODO,"#,0"
+558,73,Manual Closing ODO,8,,False,Manual Closing ODO,"#,0"
+559,73,Manual KMS,8,,False,Manual KMS,"#,0"
+560,73,MDT KMS,8,,False,MDT KMS,"#,0"
+561,73,GPS KMS,8,,False,GPS KMS,
+562,73,Base Location,1,,False,,
+563,73,District (BL),1,,False,,
+564,73,MDT Opening ODO,8,,False,MDT Opening ODO,"#,0"
+565,73,MDT Closing ODO,8,,False,MDT Closing ODO,"#,0"
+566,73,MDT O-O KMS,8,,False,MDT O-O KMS,"#,0"
+205434,73,MDT C-O KMS,8,,False,MDT C-O KMS,"#,0"
+209147,73,MDT Non Ops KMs,1,,False,,"#,0"
+77,76,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+567,76,,1,,False,ERR[Date],Short Date
+568,76,,1,,False,ERR[Vehicle Id],
+569,76,,1,,False,ERR[Ambulance Base Location],
+570,76,,1,,False,[IFT Cases],0
+571,76,,1,,False,[Total KMS],
+80,79,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+572,79,,1,,False,ODO Reading Manual[Vehicle no.],
+573,79,,1,,False,[Avg KM/month],
+574,79,,1,,False,[KMs travelled],
+575,79,ODO pivot district,1,,False,,
+576,79,ODO pivot KM range bucket,1,,False,,
+577,79,ODO pivot KM range bucket Sort,1,,False,,0
+343376,79,,1,,False,Calender[Month & Year Full],General Date
+132165,132164,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+132167,132164,HOSPITAL_ID,8,,False,HOSPITAL_ID,
+132168,132164,HOSPITAL_NAME,2,,False,HOSPITAL_NAME,
+132169,132164,HOSPITAL_TYPE,2,,False,HOSPITAL_TYPE,
+132170,132164,Source.Name,2,,False,Source.Name,
+132171,132164,Date Modified,9,,False,Date Modified,General Date
+378702,378701,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+378704,378701,Slno,2,,False,Slno,
+378705,378701,District,2,,False,District,
+378706,378701,Location,2,,False,Location,
+378707,378701,Hospital Name,2,,False,Hospital Name,
+378708,378701,Hospital ID in ERC,2,,False,Hospital ID in ERC,
+378923,378701,Hospital Type,1,,False,,
+457529,457528,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+457580,457528,,1,,False,ERR[Ambulance Base Location],
+458635,457528,,1,,False,ERR[Locality (BL)],
+458856,457528,,1,,False,[Avg ART],0.00
+458858,457528,,1,,False,[Avg GH],0.00
+461166,457528,,1,,False,Calender[Month Start],General Date
+463598,457528,ART Achieved,1,,False,,
+463795,457528,GH Achieved,1,,False,,
+463866,457528,ART No & GH Yes,1,,False,,0
+493007,457528,,1,,False,Calender[Month & Year],
+493230,457528,,1,,False,ERR[District Final],
+493234,457528,,1,,False,[Total Dispatches],"#,0"
+493789,457528,,1,,False,[ART Eligible],"#,0"
+493791,457528,,1,,False,[GH Eligible],"#,0"
+494101,457528,,1,,False,[GH Ontime],0
+494776,457528,GH Ontime %,1,,False,,0.00%;-0.00%;0.00%
+501861,457528,,1,,False,[ART No but GH Yes],"#,0"
+501863,457528,,1,,False,[ART Yes but GH No],"#,0"
+464068,464067,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+464076,464067,Source.Name,2,,False,Source.Name,
+464077,464067,Date,9,,False,Date,Short Date
+464078,464067,District,2,,False,District,
+464079,464067,Segment (served),2,,False,Segment (served),
+464080,464067,Base location,2,,False,Base location,
+464081,464067,Vehicle number,2,,False,Vehicle number,
+464082,464067,Name,2,,False,Name,
+464083,464067,Employee ID,6,,False,Employee ID,0
+464084,464067,Role,2,,False,Role,
+464085,464067,Shift slot,2,,False,Shift slot,
+464086,464067,Early (min),6,,False,Early (min),0
+464088,464067,Check-in,9,,False,Check-in,General Date
+464089,464067,Check-out,9,,False,Check-out,General Date
+464090,464067,Hours,8,,False,Hours,
+464091,464067,Method,2,,False,Method,
+477386,464067,Date Shift,1,,False,,
+536367,464067,Attendance Status,2,,False,Attendance Status,
+536368,464067,Leave Reason,2,,False,Leave Reason,
+536369,464067,Approved By,2,,False,Approved By,
+619834,464067,Hazaru in,2,,False,Hazaru in,
+619835,464067,Hazaru out,2,,False,Hazaru out,
+814580,464067,Date Modified,9,,False,Date Modified,General Date
+466382,466381,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+466384,466381,District,2,,False,District,
+466385,466381,Division Name,2,,False,Division Name,
+466386,466381,Segment Code,2,,False,Segment Code,
+466387,466381,Segment Name,2,,False,Segment Name,
+466388,466381,EMP ID,2,,False,EMP ID,
+466389,466381,EMP Name,2,,False,EMP Name,
+466390,466381,Designation,2,,False,Designation,
+466391,466381,Posting,2,,False,Posting,
+466393,466381,Date of OPS Added,2,,False,Date of OPS Added,
+466394,466381,Number of Transfers,2,,False,Number of Transfers,
+466395,466381,Current Working Status,2,,False,Current Working Status,
+571815,466381,Aadhaar No,2,,False,Aadhaar No,
+571817,466381,Date of Exit,2,,False,Date of Exit,
+571818,466381,Last working day,2,,False,Last working day,
+571819,466381,Exit reason,2,,False,Exit reason,
+571820,466381,Status last changed,2,,False,Status last changed,
+571821,466381,Status changed by,2,,False,Status changed by,
+571822,466381,Status changed at,2,,False,Status changed at,
+814581,466381,Source.Name,2,,False,Source.Name,
+814582,466381,Date Modified,2,,False,Date Modified,
+836626,466381,Date of Joining (HRMS),2,,False,Date of Joining (HRMS),
+478132,478131,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+478181,478131,,2,,False,FRS Master[EMP ID],
+478183,478131,,1,,False,FRS Master[EMP Name],
+478185,478131,,1,,False,FRS Master[Designation],
+478187,478131,,1,,False,FRS Master[Current Working Status],
+478189,478131,,1,,False,FRS Master[Segment Name],
+479161,479160,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+479169,479160,Source.Name,2,,False,Source.Name,
+479170,479160,Date modified,9,,False,Date modified,General Date
+479171,479160,EVENT_ID,2,,False,EVENT_ID,
+479172,479160,calltime,9,,False,calltime,General Date
+479173,479160,vehicle_id,2,,False,vehicle_id,
+479174,479160,DELAYED_REASONS,2,,False,DELAYED_REASONS,
+719305,719304,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+719354,719304,,1,,False,[Threshold Minutes],0
+721211,719304,,1,,False,[Threshold Range],
+719380,719379,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+719543,719379,,1,,False,[Deviation %],0
+721000,719379,,1,,False,[Deviation Range],
+721047,721046,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+721153,721046,,1,,False,[Deviated Cases Range],
+721155,721046,,1,,False,[Deviated Cases Threshold],0
+721262,721261,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+721311,721261,,1,,False,[Delay Type],
+743542,743541,RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,6,,True,,
+743591,743541,,1,,False,[Abandoned Type],
+743593,743541,,1,,False,[Sort Order],0

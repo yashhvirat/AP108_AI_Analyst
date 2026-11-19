@@ -1,0 +1,3582 @@
+ID,TableID,Name,Expression,FormatString
+609,10,ART avg (sec),AVERAGE(ERR[ART secs.]),
+610,10,ART hh:mm:ss (m),"
+VAR TotalSeconds = CALCULATE(AVERAGE(ERR[ART secs.]), ERR[ART Eligible] = ""Yes"", ERR[ART secs.] > 0, ERR[ART secs.] < 6000)
+VAR Hours = INT(TotalSeconds / 3600)
+VAR Minutes = INT(MOD(TotalSeconds, 3600) / 60)
+VAR Seconds = MOD(TotalSeconds, 60)
+RETURN
+IF(
+    Hours > 0,
+    FORMAT(TIME(Hours, Minutes, Seconds),""hh:nn:ss""),
+    FORMAT(TIME(0, Minutes, Seconds),""nn:ss"")
+)",
+613,10,EMT accepted,CALCULATE(COUNT(ERR[Accepted Time])),0
+614,10,ART cases,"CALCULATE(COUNT(ERR[Event Id]),ERR[ART Eligible]=""Yes"")",0
+615,10,% cases for ART cal,"DIVIDE([ART cases],[EMT accepted])",0%;-0%;0%
+616,10,GH Ontime %,"DIVIDE([GH Ontime], [GH Eligible (m)])",0.00%;-0.00%;0.00%
+617,10,GH Eligible (m),"
+    CALCULATE(
+        SUM(ERR[Actionable calls]), 
+        ERR[GH Eligible] = ""Yes"", 
+        ERR[GH mins.] > 0, ERR[GH mins.] < 240, 
+        ERR[Hospital To Hospital Transfer] = FALSE()
+    )","#,0"
+618,10,GH Ontime,"
+    CALCULATE(
+        [Dispatches],
+        ERR[GH Eligible] = ""Yes"",
+        ERR[Hospital To Hospital Transfer] = FALSE(),
+        ERR[GH mins.] > 0, ERR[GH mins.] <= 60
+    )","#,0"
+619,10,% cases assigned ambulances,"DIVIDE(SUM(ERR[Ambulance Assigned]),SUM(ERR[Actionable calls])) ",0%;-0%;0%
+620,10,% vehicles accepted,"DIVIDE(COUNT(ERR[Accepted Time]),SUM(ERR[Ambulance Assigned])) ",0%;-0%;0%
+621,10,Ambulance already assigned,"CALCULATE(SUM(ERR[Actionable calls]),ERR[Event result (ERR)]=""Successful"")",0
+622,10,% calls addressed,"DIVIDE([Emergencies Addressed],SUM(ERR[Actionable calls]))",0%;-0%;0%
+625,10,ART Eligible (m),"CALCULATE(SUM(ERR[Actionable calls]), ERR[ART Eligible] = ""Yes"", ERR[ART secs.] > 0, ERR[ART secs.] < 6000)","#,0"
+626,10,% ART honoured,"DIVIDE(SUM(ERR[ART honored]), [ART Eligible (m)])",0%;-0%;0%
+627,10,Unique vehicles,"CALCULATE(DISTINCTCOUNT(ERR[Vehicle Id]),ERR[Ambulance/Feeder vehicle]=""Ambulance"")",0
+628,10,GH mins (m),"CALCULATE(DIVIDE(SUM(ERR[GH mins.]), [GH Eligible (m)]), ERR[GH Eligible] = ""Yes"", ERR[Hospital To Hospital Transfer]=FALSE())",0
+629,10,GH penality,"IF(and(not ISBLANK([GH Ontime %]),[GH Ontime %]>=0.95),""No Penality"",""Attract Penality"")",
+630,10,GH penalty cases,"
+VAR gh_cases = CALCULATE(
+    DISTINCTCOUNT(ERR[Event Id]),
+
+    ERR[GH Eligible] = ""Yes"",
+
+    ERR[Hospital To Hospital Transfer] = FALSE(),
+
+    ERR[GH mins.] > 0 && ERR[GH mins.] < 240,
+
+    ERR[GH mins.] > 60
+)
+
+RETURN
+IF(gh_cases > 0, gh_cases, 0)","#,0"
+631,10,GH Penality amount,"IF([GH Ontime %]<0.95,[GH penalty cases]*2000,0)","""₹""\ #,0;#,0\ -""₹"";""₹""\ #,0"
+632,10,Vehicle within GH time new,"CALCULATE(DISTINCTCOUNT(ERR[Vehicle Id]),FILTER(ERR,[GH Ontime %]>=0.95))",0
+633,10,% IFT cases,"DIVIDE([IFT Case Requests], SUM(ERR[Ambulance Assigned]))",0.0%;-0.0%;0.0%
+634,10,IFT Case Requests,"COALESCE(CALCULATE(SUM(ERR[Actionable calls]), ERR[Hospital To Hospital Transfer]=TRUE()), 0)","#,0"
+635,10,IFT Cases/Day,"DIVIDE([IFT Served], DISTINCTCOUNT('Calender'[Date]))","#,0.00"
+636,10,Private Hosp Dispatches,"CALCULATE([Dispatches], ERR[Drop Type Lookup] = ""Pvt"")","#,0"
+637,10,% Private Hosp Dispatches,"DIVIDE([Private Hosp Dispatches], [Dispatches])",0.0%;-0.0%;0.0%
+638,10,Pvt sector drops/day,"DIVIDE([Private Hosp Dispatches],DISTINCTCOUNT('Calender'[Date]))","#,0"
+639,10,IFT Served,"CALCULATE([Dispatches], ERR[GH Eligible] = ""Yes"", ERR[Hospital To Hospital Transfer]=TRUE())","#,0"
+640,10,IFT Served %,"DIVIDE([IFT Served], [Total Cases Served])",0%;-0%;0%
+641,10,Unsuccessful Actionable calls,"CALCULATE(SUM(ERR[Actionable calls]),ERR[Event result (ERR)]=""Unsuccessful"")",0
+642,10,Dist selection,"IF(ISBLANK(SELECTEDVALUE(ERR[District Name])),""Andhra Pradesh"",SELECTEDVALUE(ERR[District Name]))",
+643,10,Total events (ERR),COUNT(ERR[Event Id]),"#,0"
+644,10,% Total events (Dist),"DIVIDE([Total events (ERR)],CALCULATE([Total events (ERR)],REMOVEFILTERS(ERR[District Name])))",0.0%;-0.0%;0.0%
+645,10,Same_Mandal_Missed_Cases,"
+CALCULATE(
+    COUNTROWS(ERR),
+    ERR[Match Base Locations] = 0,
+    ERR[IFT Label] = ""False""
+)",0
+647,10,Penalty,"
+VAR MaxDate = MAX('Calender'[Date])
+VAR CurrentQuarter = QUARTER(MaxDate)
+VAR CurrentYear = YEAR(MaxDate)
+RETURN
+CALCULATE(
+    SUMX(
+        'ERR',
+        COUNTROWS(RELATEDTABLE('ERR')) * 'ERR'[ART hh:mm:ss (m)] - 18
+    ),
+    FILTER(
+        ALL('Calender'[Date]),
+        QUARTER('Calender'[Date]) = CurrentQuarter &&
+        YEAR('Calender'[Date]) = CurrentYear
+    ),
+    'ERR'[ART honored] = 0,
+    'ERR'[Locality (BL)] = ""Urban""
+)",0
+648,10,penali,"CALCULATE(COUNTROWS(FILTER(ERR,ERR[ART honored]=0))*250)",0
+649,10,urban art diff,([ART hh:mm:ss (m)]-18),
+650,10,% Abnadoned Dispatches,"DIVIDE(SUM(ERR[Failed dispatch of ambulance]), SUM(ERR[Actionable calls]))",0.0%;-0.0%;0.0%
+651,10,% Abandoned after dispatch,"DIVIDE([Abandoned Cases], [Dispatches])",0.00%;-0.00%;0.00%
+652,10,IFT_Missed_Count,"
+VAR CurrVehicle = MAX(ERR[Caller Base Location])
+VAR PrevBoundary =
+    MAXX(
+        FILTER(
+            'ERR',
+            'ERR'[Caller Base Location] = CurrVehicle &&
+            'ERR'[IFT_Index] < MAX(ERR[IFT_Index]) &&
+            'ERR'[IFT_Boundary] = 1
+        ),
+        'ERR'[IFT_Index]
+    )
+VAR NextBoundary =
+    MINX(
+        FILTER(
+            'ERR',
+            ERR[Caller Base Location] = CurrVehicle &&
+            'ERR'[IFT_Index] > MAX(ERR[IFT_Index]) &&
+            'ERR'[IFT_Boundary] = 1
+        ),
+        'ERR'[IFT_Index]
+    )
+RETURN
+COUNTROWS(
+    FILTER(
+        'ERR',
+        'ERR'[Caller Base Location] = CurrVehicle &&
+        'ERR'[IFT_Index] > PrevBoundary &&
+        'ERR'[IFT_Index] < NextBoundary &&
+        'ERR'[Ambulance Assigned] = 0
+    )
+)
+",0
+653,10,% missed cases due to IFT,"DIVIDE(SUM(ERR[Missed Cases Due to IFT]), [Dispatches])",0%;-0%;0%
+654,10,% missed cases / Total cases,"DIVIDE(SUM(ERR[Missed Cases Due to IFT]), SUM(ERR[Ambulance Assigned]))",0%;-0%;0%
+657,10,Ambulance Assigned Count(G),"
+CALCULATE (
+    COUNTROWS ( ERR ),
+    ERR[Ambulance Assigned] = 1
+)",0
+658,10,Accepted Count(G),SUM(ERR[Accepted Flag]),0
+659,10,Assigned Count(G),SUM(ERR[Assigned Flag]),0
+660,10,On Action Count(G),SUM(ERR[On Action Flag]),0
+661,10,Enroute Count,SUM(ERR[Enroute Flag]),0
+662,10,At Scene Count,SUM(ERR[At Scene Flag]),"#,0"
+663,10,Hospital Reached Count,SUM(ERR[Hospital Reached Flag]),0
+664,10,Assigned → Accepted % (G),"
+DIVIDE([Accepted Count(G)], [Assigned Count(G)])",0%;-0%;0%
+665,10,Accepted → On Action %,"
+DIVIDE([On Action Count(G)], [Accepted Count(G)])
+",
+666,10,At Scene → Enroute % (G),"
+DIVIDE([Enroute Count], [At Scene Count])",
+667,10,Enroute → Hospital %,"
+DIVIDE([Hospital Reached Count], [Enroute Count])",0%;-0%;0%
+668,10,Calltime Count(G),SUM(ERR[Calltime Flag]),0
+669,10,Total EROs,"
+DISTINCTCOUNT(ERR[ERO NAME])",0
+670,10,MDT Not Available Vehicles,"
+CALCULATE(
+    DISTINCTCOUNT('ERR'[Vehicle ID]),
+    FILTER(
+        VALUES('ERR'[Vehicle ID]),
+        CALCULATE(MAX('ERR'[MDT Available Flag])) = 0
+    )
+)",0
+671,10,MDT Not Available %,"
+DIVIDE(
+    [MDT Not Available Vehicles],
+    [Total Vehicles]
+)",0.00%;-0.00%;0.00%
+672,10,MDT Available %,"
+1 - [MDT Not Available %]",0.0%;-0.0%;0.0%
+673,10,ART Rural,"CALCULATE([ART], Locality[Locality] = ""Rural"")",
+674,10,ART Tribal,"IF(
+    CALCULATE([ART hh:mm:ss (m)], ERR[Locality (BL)]=""Tribal"") = "":"",BLANK(), CALCULATE([ART hh:mm:ss (m)], ERR[Locality (BL)]=""Tribal""))",
+675,10,Dispatches,SUM(ERR[Ambulance Assigned]),"#,0"
+677,10,Dispatch %,"DIVIDE([Dispatches], [Total events (ERR)])",0.0%;-0.0%;0.0%
+678,10,Missed Dispatches,COUNT(ERR[Event Id])-[Dispatches],"#,0"
+679,10,Missed Dispatch %,"DIVIDE([Missed Dispatches], [Total events (ERR)])",0.00%;-0.00%;0.00%
+681,10,ART Shortfall Measure,"
+VAR AvgMin = AVERAGE(ERR[ART mins.])
+VAR Target =
+    SWITCH(
+        SELECTEDVALUE(ERR[Locality (BL)]),
+        ""Urban"", 18+5,
+        ""Rural"", 23+5,
+        ""Tribal"", 33+5
+    )
+
+VAR Diff = Target - AvgMin
+
+RETURN
+IF(
+    Diff = Target,
+    BLANK(),
+    SWITCH(
+        TRUE(),
+        Diff > 0, ""<0 min"",
+        AND(ABS(Diff) < 5, ABS(Diff) > 0) , ""0-5 min"",
+        AND(ABS(Diff) < 10, ABS(Diff) > 5) , ""5-10 min"",
+        AND(ABS(Diff) < 15, ABS(Diff) > 10) , ""10-15 min"",
+        AND(ABS(Diff) < 20, ABS(Diff) > 15) , ""15-20 min"",
+        "">20 min""
+    )
+)",
+682,10,ART formatting,"
+var selectedLocality = SELECTEDVALUE(Locality[Locality])
+var ART_min = AVERAGE(ERR[ART mins.])
+
+RETURN 
+IF(ISBLANK(ART_min), ""#00000000"",
+SWITCH(
+    TRUE(),
+    ART_min > 18+5 && selectedLocality = ""Urban"", ""#EE817E"",
+    ART_min > 23+5 && selectedLocality = ""Rural"", ""#EE817E"",
+    ART_min > 33+5 && selectedLocality = ""Tribal"", ""#EE817E"",
+    ""#76EA9F""
+))",
+683,10,ART Urban,"CALCULATE([ART], Locality[Locality] = ""Urban"")",
+684,10,MDT Not Available veh %,"
+DIVIDE(
+    [MDT Not Available Vehicles],
+    [Total Vehicles]
+)",0.0%;-0.0%;0.0%
+685,10,MDT AVBL Segments,"
+COALESCE(CALCULATE(
+    DISTINCTCOUNT(ERR[Ambulance Base Location]),
+    FILTER(
+        VALUES(ERR[Ambulance Base Location]),
+        CALCULATE(MAX('ERR'[MDT AVBL Flag])) = 1
+    )
+), 0)","#,0"
+686,10,MDT Used Segments,"
+COALESCE(CALCULATE(
+    DISTINCTCOUNT(ERR[Ambulance Base Location]),
+    FILTER(
+        VALUES(ERR[Ambulance Base Location]),
+        CALCULATE(
+            MAX(ERR[MDT Used Flag])
+        ) = 1
+    )
+), 0)","#,0"
+687,10,MDT Usage/Cases %,"DIVIDE([MDT Used Cases], [Dispatches])",0.00%;-0.00%;0.00%
+688,10,MDT Used Segement %,"DIVIDE([MDT Used Segments], [Total Segments Served])",0.00%;-0.00%;0.00%
+689,10,MDT Not Used Segments,"
+CALCULATE(
+    DISTINCTCOUNT(ERR[Ambulance Base Location]),
+    FILTER(
+        VALUES(ERR[Ambulance Base Location]),
+        CALCULATE(
+            MAX(ERR[MDT Used Flag]),
+            REMOVEFILTERS(ERR[District Name])
+        ) = 0
+    ), ERR[Ambulance Base Location]<>""null"", ERR[Ambulance Base Location]<>""Backup""
+)",0
+690,10,GH Shortfall Measure,"
+VAR TotalTimeTaken = AVERAGE(ERR[GH secs.])
+VAR MaxLimit = 3600
+
+VAR Diff = MaxLimit - TotalTimeTaken
+VAR ShortfallMin = ABS(Diff) / 60
+
+RETURN
+IF(
+    Diff < 0,
+    SWITCH(
+        TRUE(),
+        ShortfallMin > 0 && ShortfallMin <= 5, ""0-5 min"",
+        ShortfallMin > 5 && ShortfallMin <= 10, ""5-10 min"",
+        ShortfallMin > 10 && ShortfallMin <= 20, ""10-20 min"",
+        ShortfallMin > 20 && ShortfallMin <= 30, ""20-30 min"",
+        ShortfallMin > 30 && ShortfallMin <= 60, ""30-60 min"",
+        "">60 min""
+    ),
+    ""Achieved""
+)",
+691,10,MDT Selected Date,SELECTEDVALUE('Calender'[Date]),General Date
+692,10,Total Segments Served,"
+VAR total = CALCULATE(
+    DISTINCTCOUNT(ERR[Ambulance Base Location]),
+    FILTER(
+        ERR,
+        NOT ISBLANK(ERR[Vehicle Id]) &&
+        ERR[Ambulance Base Location] <> ""Backup"" &&
+        ERR[Ambulance Base Location] <> ""null""
+    )
+)
+
+RETURN
+IF(total > 0, total, 0)",0
+693,10,GH Not Ontime,[Total Cases Served] - [GH Ontime],0
+694,10,% Not completed in GH,"
+    CALCULATE(
+        DIVIDE(
+            [GH Not Ontime],
+            CALCULATE(
+                SUM(ERR[Actionable calls]),
+                ERR[GH Eligible]=""Yes"")
+            ),
+        ERR[Hospital To Hospital Transfer]=FALSE()
+    )",0.0%;-0.0%;0.0%
+695,10,At Scene Closure %,"DIVIDE(SUM(ERR[At Scene Closure]), [Dispatches])",0.00%;-0.00%;0.00%
+696,10,MDT Uptime %,"COALESCE(DIVIDE([MDT Used Segments] * DISTINCTCOUNT(ERR[Date]), DISTINCTCOUNT(ERR[Date]) * 733, 0), 0)",0.00%;-0.00%;0.00%
+697,10,ART Urban formatting,"
+VAR selectedLocality = SELECTEDVALUE(Locality[Locality])
+VAR ART_min = [ART Urban]   -- or your main ART measure
+
+RETURN 
+IF(
+    ISBLANK(ART_min) || ISBLANK(selectedLocality),
+    BLANK(),
+    SWITCH(
+        TRUE(),
+        selectedLocality = ""Urban"" && ART_min > 18, ""#E91D26"",
+        selectedLocality = ""Rural"" && ART_min > 23, ""#E91D26"",
+        selectedLocality = ""Tribal"" && ART_min > 33, ""#E91D26"",
+        ""#46B648""
+    )
+)",0
+698,10,GH hh:mm:ss (m),"
+VAR TotalSeconds = CALCULATE(AVERAGE(ERR[GH secs.]), ERR[GH Eligible] = ""Yes"", ERR[GH mins.] > 0, ERR[GH mins.] < 240, ERR[Hospital To Hospital Transfer] = FALSE())
+VAR Hours = INT(TotalSeconds / 3600)
+VAR Minutes = INT(MOD(TotalSeconds, 3600) / 60)
+VAR Seconds = MOD(TotalSeconds, 60)
+RETURN
+IF(
+    Hours > 0,
+    TIME(Hours, Minutes, Seconds),
+    TIME(0, Minutes, Seconds)
+)",hh:nn:ss
+699,10,ART New Measure,"
+VAR TotalSeconds = AVERAGE(ERR[ART secs.])
+VAR Hours = INT(TotalSeconds / 3600)
+VAR Minutes = INT(MOD(TotalSeconds, 3600) / 60)
+VAR Seconds = MOD(TotalSeconds, 60)
+RETURN
+IF(
+    Hours > 0,
+    Hours*60 + Minutes & "":"" & FORMAT(Seconds, ""00""),
+    FORMAT(Minutes, ""00"") & "":"" & FORMAT(Seconds, ""00"")
+)",
+700,10,MDT Not Used Cases,"COALESCE(CALCULATE([Dispatches], ERR[MDT Used Flag] = 0), 0)","#,0"
+701,10,MDT Used Cases,"CALCULATE([Dispatches], ERR[MDT Used Flag] = 1)","#,0"
+702,10,MDT Not Used/Cases %,"DIVIDE([MDT Not Used Cases], [Dispatches])",0.00%;-0.00%;0.00%
+703,10,Delivered Emergencies,"
+VAR delivered = CALCULATE([Total events (ERR)], ERR[Delivery Status] = ""Delivered"")
+
+RETURN
+IF(delivered > 0, delivered, 0)","#,0"
+704,10,Failed Emergencies,"
+VAR failed = CALCULATE([Total events (ERR)], ERR[Delivery Status] = ""Failed"")
+
+RETURN
+IF(failed > 0, failed, 0)","#,0"
+705,10,ART Font formatting,"
+var selectedLocality = SELECTEDVALUE(Locality[Locality])
+var avg_art_sec = CALCULATE(AVERAGE(ERR[ART secs.]), ERR[ART Eligible] = ""Yes"", ERR[ART secs.] > 0, ERR[ART secs.] < 6000)
+
+RETURN 
+    IF(
+        ISBLANK(avg_art_sec), ""#00000000"",
+        SWITCH(
+            TRUE(),
+            avg_art_sec > 1080 && selectedLocality = ""Urban"", ""#E53935"",
+            avg_art_sec > 1380 && selectedLocality = ""Rural"", ""#E53935"",
+            avg_art_sec > 1980 && selectedLocality = ""Tribal"", ""#E53935"",
+            ""#1DB954""
+        )
+    )",
+706,10,% calls not addressed,"DIVIDE([Emergencies Not Addressed],SUM(ERR[Actionable calls]))",0.00%;-0.00%;0.00%
+707,10,% GH Exceeded,"DIVIDE([GH Not Ontime], [Dispatches])",0.00%;-0.00%;0.00%
+709,10,MDT AVBL Cases,"CALCULATE([Dispatches], ERR[MDT AVBL Flag] = 1)","#,0"
+710,10,Segments Not Served,"
+VAR AllBases = 
+    CALCULATETABLE(
+        FILTER(
+            VALUES(Segments[Base location]),
+            NOT ISBLANK(Segments[Base location])
+        ),
+        USERELATIONSHIP(
+            Segments[District Name],
+            'Districts & Regions'[District]
+        )
+    )
+
+VAR SlicerSelection =                                    
+    VALUES(ERR[Ambulance Base location])
+
+VAR FilteredAllBases =                                   
+    FILTER(
+        AllBases,
+        NOT ISFILTERED(ERR[Ambulance Base location])
+        || Segments[Base location] IN SlicerSelection
+    )
+
+VAR PresentBases = 
+    CALCULATETABLE(
+        VALUES(ERR[Ambulance Base location]),
+        ERR[Date] IN VALUES('Calender'[Date]),
+        NOT ISBLANK(ERR[Ambulance Base location])
+    )
+
+VAR Missing = 
+    EXCEPT(FilteredAllBases, PresentBases)
+
+VAR result = COUNTROWS(Missing) - 5     --special base locations
+
+RETURN
+    IF(result > 0, result, 0)",0
+711,10,Missing Locations Flag,"
+IF(MAX(ERR[Ambulance Base Location]) IN VALUES(Segments[Base Location]), 1, 0)",0
+713,10,Dispatch Target,1 - [Dispatch %],
+714,10,Abandoned Cases Valid,"CALCULATE(SUM(ERR[Abandoned After Dispatch]), ERR[MDT Abandoned Reason new] IN {""Address not clear"", ""Bad road condition"", ""EMT/Pilot Sick"", ""Vehicle Breakdown"", ""Patient willing to goto hospital"", ""Scene Safety (Mob/Drunken/Riots/Blast)"",""null""})","#,0"
+715,10,Abandoned Cases % Valid,"
+CALCULATE(
+    DIVIDE(
+        CALCULATE(SUM(ERR[Abandoned After Dispatch]), ERR[MDT Abandoned Reason new] IN {""Address not clear"", ""Vehicle Breakdown"", ""Scene Safety (Mob/Drunken/Riots/Blast)"", ""EMT/Pilot Sick"", ""Patient willing to goto hospital"", ""null"", ""Bad road condition""}),
+        CALCULATE(
+            COUNTROWS(
+                FILTER(ERR, NOT ISBLANK(ERR[Assign Time]))
+            ),
+            ALL(ERR[MDT Abandoned Reason new])
+        )
+    ),
+    ERR[Ambulance Base Location] <> ""Backup""
+)",0.00%;-0.00%;0.00%
+716,10,Segments within GH SLA (95%),"
+VAR achieved = CALCULATE(
+    DISTINCTCOUNT(ERR[Ambulance Base Location]),
+    FILTER(
+        VALUES(ERR[Ambulance Base Location]),
+        [GH Ontime %] >= 0.95
+    )
+)
+
+RETURN
+IF(achieved > 0, achieved, 0)",0
+717,10,Segments within GH SLA %,"DIVIDE([Segments within GH SLA (95%)], [Total Segments Served])",0%;-0%;0%
+718,10,MDT Partially Used/Case %,"DIVIDE(CALCULATE([MDT Used Cases], ERR[MDT Partially Used Flag] = 3), [Dispatches])",0.00%;-0.00%;0.00%
+719,10,Segment with most Abandoned cases,"
+
+VAR SummaryTable =
+    CALCULATETABLE(
+        ADDCOLUMNS(
+            ALL(ERR[Ambulance Base Location]),
+            ""AbandonedCount"", CALCULATE(SUM(ERR[Abandoned After Dispatch]))
+        )
+    )
+
+VAR TopSegment =
+    TOPN(1, SummaryTable, [AbandonedCount], DESC)
+
+RETURN
+MAXX(TopSegment, ERR[Ambulance Base Location])",
+720,10,District with most Abandoned cases,"
+VAR SummaryTable =
+    ADDCOLUMNS(
+        ALL(ERR[District Final]),
+        ""AbandonedCount"", CALCULATE(SUM(ERR[Abandoned After Dispatch]))
+    )
+
+VAR TopSegment =
+    TOPN(1, SummaryTable, [AbandonedCount], DESC)
+
+RETURN
+MAXX(TopSegment, ERR[District Final])",
+721,10,Total Segments Served %,"DIVIDE([Total Segments Served],731)",0.00%;-0.00%;0.00%
+722,10,Top District with GH Achieved Segments,"
+VAR SummaryTable =
+    ADDCOLUMNS(
+        VALUES(ERR[District Final]),
+        ""GH"", [Segments within GH SLA %]
+    )
+
+VAR TopSegment =
+    TOPN(1, SummaryTable, [GH], DESC)
+
+RETURN
+MAXX(TopSegment, ERR[District Final])",
+723,10,Top District with GH Achieved Segments %,"
+VAR SummaryTable =
+    ADDCOLUMNS(
+        VALUES(ERR[District Final]),
+        ""GH"", [Segments within GH SLA %]
+    )
+
+VAR TopSegment =
+    TOPN(1, SummaryTable, [GH], DESC)
+
+RETURN
+MAXX(TopSegment, [GH])",0.00%;-0.00%;0.00%
+724,10,Within SLA (top 5),"
+VAR Locality = SELECTEDVALUE(ERR[Locality (BL)])
+VAR ART = AVERAGE(ERR[ART mins.])   -- your measure
+
+RETURN
+SWITCH(
+    TRUE(),
+    Locality = ""Urban"" && ART <= 18, 1,
+    Locality = ""Rural"" && ART <= 23, 1,
+    Locality = ""Tribal"" && ART <= 33, 1,
+    0
+)",0
+725,10,Within SLA (bottom 5),"
+VAR Locality = SELECTEDVALUE(ERR[Locality (BL)])
+VAR ART = AVERAGE(ERR[ART mins.])   -- your measure
+
+RETURN
+SWITCH(
+    TRUE(),
+    Locality = ""Urban"" && ART > 18, 1,
+    Locality = ""Rural"" && ART > 23, 1,
+    Locality = ""Tribal"" && ART > 33, 1,
+    0
+)",0
+726,10,Vehicle IDs by Segment,"
+CONCATENATEX(
+    VALUES(ERR[Vehicle Id]),
+    ERR[Vehicle Id],
+    "", ""
+)",
+727,10,Segment Days in Selected Month,"
+CALCULATE(
+    DISTINCTCOUNT(ERR[Date]), 
+    ALLEXCEPT('Calender', 'Calender'[Month]),
+    REMOVEFILTERS(ERR[Ambulance Base Location]),
+    REMOVEFILTERS('Districts & Regions'[District])
+)",0
+728,10,Segment Uptime %,"
+DIVIDE([Segment Uptime Days (This Month)], [Segment Days in Selected Month])",0%;-0%;0%
+729,10,1,"
+
+COUNTROWS (
+    FILTER (
+        SUMMARIZE (
+            ERR,
+            ERR[Ambulance Base Location],
+            ERR[Locality (BL)],
+            ""AvgART"", AVERAGE ( ERR[ART mins.] )
+        ),
+        [AvgART]
+            <= SWITCH (
+                [Locality (BL)],
+                ""Urban"", 18,
+                ""Rural"", 23,
+                ""Tribal"", 33
+            )
+    )
+)",0
+730,10,Dynamic GH Title,"
+VAR segment = SELECTEDVALUE(ERR[Ambulance Base Location])
+
+RETURN
+IF(
+    ISFILTERED(ERR[Ambulance Base Location]),
+    ""% Cases Completed in GH Trend - "" & segment,
+    ""% Cases Completed in GH Trend""
+)",
+731,10,GH% Current Month,"
+VAR CurrMonth = MAX('Calender'[Month Sort])
+RETURN
+CALCULATE(
+    [GH Ontime %],
+    'Calender'[Month Sort] = CurrMonth
+)",0%;-0%;0%
+732,10,GH% 3 Month ago,"
+VAR LastMonth = MAX('Calender'[Month Sort]) - 3
+RETURN
+CALCULATE(
+    [GH Ontime %],
+    'Calender'[Month Sort] = LastMonth
+)",0%;-0%;0%
+733,10,Segments not within GH SLA (95%),"
+VAR achieved = CALCULATE(
+    DISTINCTCOUNT(ERR[Ambulance Base Location]),
+    FILTER(
+        VALUES(ERR[Ambulance Base Location]),
+        [GH Ontime %] < 0.95
+    )
+)
+
+RETURN
+IF(achieved > 0, achieved, 0)",0
+734,10,Segments not within GH SLA %,"DIVIDE([Segments not within GH SLA (95%)], [Total Segments Served])",0.00%;-0.00%;0.00%
+735,10,GH Current Month,"
+VAR CurrMonth = MAX('Calender'[Month Sort])
+RETURN
+CALCULATE(
+    [GH Ontime],
+    'Calender'[Month Sort] = CurrMonth
+)",0
+736,10,GH% 2 Month ago,"
+VAR LastMonth = MAX('Calender'[Month Sort]) - 2
+RETURN
+CALCULATE(
+    [GH Ontime %],
+    'Calender'[Month Sort] = LastMonth
+)",0%;-0%;0%
+737,10,GH% 1 Month ago,"
+VAR LastMonth = MAX('Calender'[Month Sort]) - 1
+RETURN
+CALCULATE(
+    [GH Ontime %],
+    'Calender'[Month Sort] = LastMonth
+)",0%;-0%;0%
+739,10,Improvement Flag,"
+VAR CurrentGH = ROUND([GH Last Month], 2)
+VAR PrevGH   = ROUND([GH Last 2nd Month], 2)
+VAR Prev2GH   = ROUND([GH Last 3rd Month], 2)
+
+RETURN
+    IF(
+        ISBLANK(CurrentGH) || ISBLANK(PrevGH) || ISBLANK(Prev2GH),
+        BLANK(),
+        SWITCH(
+            TRUE(),
+            CurrentGH >= 0.95, ""Achieved"",
+            CurrentGH <= 0.7, ""Poor"",
+            CurrentGH >= 0.9 && CurrentGH > PrevGH && CurrentGH > Prev2GH, ""Good Improvement"",
+            PrevGH >= 0.95 && Prev2GH >= 0.95 && CurrentGH < 0.95, ""Recent Decrease"",
+            (PrevGH >= 0.95 || Prev2GH >= 0.95) && CurrentGH < 0.95, ""Decreasing"",
+            ""No Improvement""
+        )
+    )",
+740,10,Last 3 Months Filter,"
+VAR SelectedDate =
+    MAX('Month Slicer'[Date])
+
+VAR StartDate =
+    EOMONTH(SelectedDate, -3) + 1
+
+RETURN
+IF(
+    MAX('Calender'[Date]) >= StartDate &&
+    MAX('Calender'[Date]) <= SelectedDate,
+    1,
+    0
+)",0
+741,10,Current Month & Year,"
+CALCULATE(
+    MAX('Calender'[Month]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Month Sort] = MAX('Month Slicer'[Month Sort])
+    )
+) & "" %""",
+742,10,Prev Month & Year,"
+
+VAR Selected_key = SELECTEDVALUE('Month Slicer'[Month Sort])
+
+VAR SelectedYear  = INT(Selected_key / 100)
+VAR SelectedMonth = MOD(Selected_key, 100)
+
+VAR TargetMonth = SelectedMonth - 1
+VAR AdjustedYear  = IF(TargetMonth <= 0, SelectedYear - 1, SelectedYear)
+VAR AdjustedMonth = IF(TargetMonth <= 0, TargetMonth + 12, TargetMonth)
+
+VAR TargetKey = (AdjustedYear * 100) + AdjustedMonth
+
+RETURN
+CALCULATE(
+    MAX('Calender'[Month]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Month Sort] = TargetKey
+    )
+) & "" %""",
+743,10,Prev2 Month & Year,"
+VAR Selected_key = SELECTEDVALUE('Month Slicer'[Month Sort])
+
+VAR SelectedYear  = INT(Selected_key / 100)
+VAR SelectedMonth = MOD(Selected_key, 100)
+
+VAR TargetMonth = SelectedMonth - 2
+VAR AdjustedYear  = IF(TargetMonth <= 0, SelectedYear - 1, SelectedYear)
+VAR AdjustedMonth = IF(TargetMonth <= 0, TargetMonth + 12, TargetMonth)
+
+VAR TargetKey = (AdjustedYear * 100) + AdjustedMonth
+
+RETURN
+CALCULATE(
+    MAX('Calender'[Month]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Month Sort] = TargetKey
+    )
+) & "" %""",
+744,10,Total Segments Served Last Month,"
+CALCULATE(
+    [Total Segments Served], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",0
+745,10,Segments within GH SLA (96%) Last Month,"
+CALCULATE(
+    [Segments within GH SLA (95%)], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",0
+746,10,Segments not within GH SLA (95%) Last Month,"
+CALCULATE(
+    [Segments not within GH SLA (95%)], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",0
+747,10,Penalty Cases Last Month,"
+CALCULATE(
+    [GH penalty cases], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)","#,0"
+748,10,Segments within GH SLA % Last Month,"
+CALCULATE(
+    [Segments within GH SLA %], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",0.00%;-0.00%;0.00%
+749,10,Segments not within GH SLA % Last Month,"
+CALCULATE(
+    [Segments not within GH SLA %], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",0.00%;-0.00%;0.00%
+751,10,Time Taken Last Month,"
+CALCULATE(
+    MAX(ERR[GH hh:mm:ss]), 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",hh:nn:ss
+752,10,GH Last Month,"
+CALCULATE(
+    [GH Ontime %] , 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",0%;-0%;0%
+753,10,GH Last 2nd Month,"
+VAR Selected_key = SELECTEDVALUE('Month Slicer'[Month Sort])
+
+VAR SelectedYear  = INT(Selected_key / 100)
+VAR SelectedMonth = MOD(Selected_key, 100)
+
+VAR TargetMonth = SelectedMonth - 1
+VAR AdjustedYear  = IF(TargetMonth <= 0, SelectedYear - 1, SelectedYear)
+VAR AdjustedMonth = IF(TargetMonth <= 0, TargetMonth + 12, TargetMonth)
+
+VAR TargetKey = (AdjustedYear * 100) + AdjustedMonth
+
+RETURN
+CALCULATE(  
+    [GH Ontime %], 
+    'Calender'[Month Sort] = TargetKey
+)",0%;-0%;0%
+754,10,GH Last 3rd Month,"
+VAR Selected_key = SELECTEDVALUE('Month Slicer'[Month Sort])
+
+VAR SelectedYear  = INT(Selected_key / 100)
+VAR SelectedMonth = MOD(Selected_key, 100)
+
+VAR TargetMonth = SelectedMonth - 2
+VAR AdjustedYear  = IF(TargetMonth <= 0, SelectedYear - 1, SelectedYear)
+VAR AdjustedMonth = IF(TargetMonth <= 0, TargetMonth + 12, TargetMonth)
+
+VAR TargetKey = (AdjustedYear * 100) + AdjustedMonth
+
+RETURN
+CALCULATE(  
+    [GH Ontime %], 
+    'Calender'[Month Sort] = TargetKey
+)",0%;-0%;0%
+755,10,Improvement Flag 2,"
+VAR CurrentGH = ROUND([GH% Current Month], 2)
+VAR PrevGH   = ROUND([GH% 1 Month ago], 2)
+VAR Prev2GH   = ROUND([GH% 2 Month ago], 2)
+
+RETURN
+    IF(
+        ISBLANK(CurrentGH) || ISBLANK(PrevGH) || ISBLANK(Prev2GH),
+        BLANK(),
+        SWITCH(
+            TRUE(),
+            CurrentGH >= PrevGH && PrevGH >= Prev2GH, ""Improved"",
+            CurrentGH < PrevGH && PrevGH < Prev2GH, ""Poor"",
+            CurrentGH < PrevGH && PrevGH > Prev2GH, ""No Improvement"",
+            ""Recent Improvement""
+        )
+    )",
+756,10,Current Month & Year Achieved,"
+CALCULATE(
+    MAX('Calender'[Month]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Month Sort] = MAX('Month Slicer'[Month Sort])
+    )
+) & "" Achieved""",
+758,10,Ontime Last Month,"
+CALCULATE(
+    [GH Ontime], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)","#,0"
+759,10,Current Month & Year Total,"
+CALCULATE(
+    MAX('Calender'[Month]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Month Sort] = MAX('Month Slicer'[Month Sort])
+    )
+) & "" Total""",
+760,10,GH Segements Last Month,"
+CALCULATE(
+  [Segments within GH SLA (95%)] , 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",
+761,10,GH Segements Last 2nd Month,"
+VAR Selected_key = SELECTEDVALUE('Month Slicer'[Month Sort])
+
+VAR SelectedYear  = INT(Selected_key / 100)
+VAR SelectedMonth = MOD(Selected_key, 100)
+
+VAR TargetMonth = SelectedMonth - 1
+VAR AdjustedYear  = IF(TargetMonth <= 0, SelectedYear - 1, SelectedYear)
+VAR AdjustedMonth = IF(TargetMonth <= 0, TargetMonth + 12, TargetMonth)
+
+VAR TargetKey = (AdjustedYear * 100) + AdjustedMonth
+
+RETURN
+CALCULATE(  
+  DIVIDE([Segments within GH SLA (95%)],DISTINCTCOUNT(ERR[Ambulance Base Location])),
+    'Calender'[Month Sort] = TargetKey
+)",0%;-0%;0%
+762,10,GH Segements Last 3rd Month,"
+VAR Selected_key = SELECTEDVALUE('Month Slicer'[Month Sort])
+
+VAR SelectedYear  = INT(Selected_key / 100)
+VAR SelectedMonth = MOD(Selected_key, 100)
+
+VAR TargetMonth = SelectedMonth - 2
+VAR AdjustedYear  = IF(TargetMonth <= 0, SelectedYear - 1, SelectedYear)
+VAR AdjustedMonth = IF(TargetMonth <= 0, TargetMonth + 12, TargetMonth)
+
+VAR TargetKey = (AdjustedYear * 100) + AdjustedMonth
+
+RETURN
+CALCULATE(  
+   DIVIDE([Segments within GH SLA (95%)],DISTINCTCOUNT(ERR[Ambulance Base Location])),
+    'Calender'[Month Sort] = TargetKey
+)",0%;-0%;0%
+763,10,GH Segements Last Month %,"
+CALCULATE(
+  DIVIDE([Segments within GH SLA (95%)],DISTINCTCOUNT(ERR[Ambulance Base Location])),
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",0%;-0%;0%
+764,10,Selected Segment,"
+VAR segment = SELECTEDVALUE(Segments[Base Location])
+
+RETURN
+    IF(
+        ISFILTERED(Segments[Base Location]),
+        segment,
+        ""All Segments""
+    )",
+765,10,Locality of Selected Segment,"
+CALCULATE(
+    MIN(Segments[Locality]), 
+    Segments[Base Location] = SELECTEDVALUE(Segments[Base Location])
+)",
+766,10,Segment ART Font formatting,"
+var segment = SELECTEDVALUE(Segments[Base Location])
+var selectedLocality = CALCULATE(MAX(Segments[Locality]), Segments[Base Location] = segment)
+var ART_min = AVERAGE(ERR[ART mins.])
+
+RETURN 
+IF(ISBLANK(ART_min), ""#00000000"",
+SWITCH(
+    TRUE(),
+    ISBLANK(segment), ""#070F25"",
+    ART_min > 18 && selectedLocality = ""Urban"", ""#E91D26"",
+    ART_min > 23 && selectedLocality = ""Rural"", ""#E91D26"",
+    ART_min > 33 && selectedLocality = ""Tribal"", ""#E91D26"",
+    ""#46B648""
+))",
+767,10,GH Font formatting,"
+var gh_sec = CALCULATE(AVERAGE(ERR[GH secs.]), ERR[GH Eligible] = ""Yes"", ERR[GH mins.] > 0, ERR[GH mins.] < 240, ERR[Hospital To Hospital Transfer] = FALSE())
+
+RETURN
+SWITCH(
+    TRUE(),
+    ISBLANK(gh_sec), ""#00000000"",
+    gh_sec > 3600, ""#E91D26"",
+    ""#46B648""
+)",
+768,10,Avg Assign to Accepted (min),"
+VAR avg_sec = 
+    CALCULATE(
+        AVERAGEX(
+            ERR,
+            DATEDIFF(
+                ERR[Assign Time],
+                ERR[Accepted Time],
+                SECOND
+            )
+        ),
+        DATEDIFF(
+            ERR[Assign Time],
+            ERR[Accepted Time],
+            SECOND
+        ) > 0
+    )
+
+VAR minutes = INT(avg_sec / 60)
+VAR seconds = MOD(INT(avg_sec), 60)
+
+RETURN
+    minutes + (seconds / 100)",0.00
+769,10,Avg Accepted to On Action (min),"
+VAR avg_sec = 
+    CALCULATE(
+        AVERAGEX(
+            ERR,
+            DATEDIFF(
+                ERR[Accepted Time],
+                ERR[On Action Time],
+                SECOND
+            )
+        ),
+        DATEDIFF(
+            ERR[Accepted Time],
+            ERR[On Action Time],
+            SECOND
+        ) > 0
+    )
+
+VAR minutes = INT(avg_sec / 60)
+VAR seconds = MOD(INT(avg_sec), 60)
+
+RETURN
+    minutes + (seconds / 100)",0.00
+770,10,Avg On Action At Scene (min),"
+VAR avg_sec = AVERAGEX(
+    ERR,
+    DATEDIFF(
+        ERR[On Action Time],
+        ERR[At Scene Tme],
+        SECOND
+    )
+)
+VAR minutes = INT(avg_sec / 60)
+VAR seconds = MOD(INT(avg_sec), 60)
+
+RETURN
+    minutes + (seconds / 100)",0.00
+771,10,Avg At Scene to Enroute (min),"
+VAR avg_sec =
+    CALCULATE(
+        AVERAGEX(
+            ERR,
+            DATEDIFF(
+                ERR[At Scene Tme],
+                ERR[Enroute Time],
+                SECOND
+            )
+        ),
+        DATEDIFF(
+            ERR[At Scene Tme],
+            ERR[Enroute Time],
+            SECOND
+        ) > 0
+    )
+
+VAR minutes = INT(avg_sec / 60)
+VAR seconds = MOD(INT(avg_sec), 60)
+
+RETURN
+    minutes + (seconds / 100)",
+772,10,Avg Enroute to Hospital Reached (min),"
+VAR avg_sec = 
+    CALCULATE(
+        AVERAGEX(
+            ERR,
+            DATEDIFF(
+                ERR[Enroute Time],
+                ERR[Hospital Reached Time],
+                SECOND
+            )
+        ),
+        DATEDIFF(
+            ERR[Enroute Time],
+            ERR[Hospital Reached Time],
+            SECOND
+        ) > 0
+    )
+
+VAR minutes = INT(avg_sec / 60)
+VAR seconds = MOD(INT(avg_sec), 60)
+
+RETURN
+    minutes + (seconds / 100)",0.00
+773,10,Avg Hospital Reached to Handover (min),"
+VAR avg_sec = 
+    CALCULATE(
+        AVERAGEX(
+            ERR,
+            DATEDIFF(
+                ERR[Hospital Reached Time],
+                ERR[Hospital Handoverd Time],
+                SECOND
+            )
+        ),
+        DATEDIFF(
+            ERR[Hospital Reached Time],
+            ERR[Hospital Handoverd Time],
+            SECOND
+        ) > 0
+    )
+
+VAR minutes = INT(avg_sec / 60)
+VAR seconds = MOD(INT(avg_sec), 60)
+
+RETURN
+    minutes + (seconds / 100)",0.00
+774,10,Selected Vehicle,"
+VAR vehicle = SELECTEDVALUE('Vehicles Master Database'[Vehicle Number])
+
+RETURN
+    IF(
+        ISFILTERED('Vehicles Master Database'[Vehicle Number]),
+        vehicle,
+        ""All Vehicles""
+    )",
+775,10,Locality of Selected Vehicle,"
+CALCULATE(
+    MIN('Vehicles Master Database'[Locality]), 
+    'Vehicles Master Database'[Vehicle Number] = SELECTEDVALUE('Vehicles Master Database'[Vehicle Number])
+)",
+776,10,KMS (m),"
+VAR kms = MAX(ERR[KMS Travelled (MDT) Two Way])
+
+RETURN
+IF(kms < 0, ""NA"", kms)",
+777,10,Speed (m),"
+VAR speed = MAX(ERR[Speed (kmph)])
+VAR kms = MAX(ERR[KMS Travelled (MDT) Two Way])
+
+RETURN
+IF(kms < 0, ""NA"", speed)",
+778,10,Penalty Events Last Month,"
+CALCULATE(
+    [GH penalty cases], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)","#,0"
+779,10,KMS Last Month,"
+CALCULATE(
+    [KMS (m)], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",
+780,10,GH (Hours) Last Month,"
+CALCULATE(
+    SUM(ERR[GH (Hours)]), 
+    'Calender'[Month] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",
+781,10,Speed Last Month,"
+CALCULATE(
+    [Speed (m)], 
+    'Calender'[Month & Year] = SELECTEDVALUE('Month Slicer'[Month & Year])
+)",
+782,10,% completed in GH 2,"
+COALESCE(CALCULATE(
+    DIVIDE(
+        [GH Ontime],
+        SUM(ERR[Actionable calls])
+    ),
+    ERR[GH Eligible] = ""Yes"",
+    ERR[Hospital To Hospital Transfer] = FALSE()
+), 0)",0%;-0%;0%
+783,10,Vehicle ART Font formatting,"
+var vehicle = SELECTEDVALUE('Vehicles Master Database'[Vehicle Number])
+var selectedLocality = CALCULATE(MAX('Vehicles Master Database'[Locality]), 'Vehicles Master Database'[Vehicle Number] = vehicle)
+var ART_min = AVERAGE(ERR[ART mins.])
+
+RETURN 
+IF(ISBLANK(ART_min), ""#00000000"",
+SWITCH(
+    TRUE(),
+    ISBLANK(vehicle), ""#070F25"",
+    ART_min > 18 && selectedLocality = ""Urban"", ""#E91D26"",
+    ART_min > 23 && selectedLocality = ""Rural"", ""#E91D26"",
+    ART_min > 33 && selectedLocality = ""Tribal"", ""#E91D26"",
+    ""#46B648""
+))",
+784,10,Avg Assign to Accept Formatting,"
+VAR avg_time = CALCULATE([Avg Assign to Accepted (min)], ERR[GH mins.] > 0 && ERR[GH mins.] < 240, ERR[Incorrect MDT Stamp Flag] = 0)
+
+RETURN
+SWITCH(
+    TRUE(),
+    avg_time < 3, ""#8CD47E"",
+    avg_time < 10, ""#F8D66D"",
+    avg_time >= 10, ""#FF7F7F""
+)",
+785,10,Avg Accept to OnAction Formatting,"
+VAR avg_time = CALCULATE([Avg Accepted to On Action (min)], ERR[GH mins.] > 0 && ERR[GH mins.] < 240, ERR[Incorrect MDT Stamp Flag] = 0)
+
+RETURN
+SWITCH(
+    TRUE(),
+    avg_time < 3, ""#8CD47E"",
+    avg_time < 10, ""#F8D66D"",
+    avg_time >= 10, ""#FF7F7F""
+)",
+786,10,Avg OnAction to At Scene Formatting,"
+VAR avg_time = CALCULATE([Avg On Action At Scene (min)], ERR[GH mins.] > 0 && ERR[GH mins.] < 240, ERR[Incorrect MDT Stamp Flag] = 0)
+
+RETURN
+SWITCH(
+    TRUE(),
+    avg_time < 15, ""#8CD47E"",
+    avg_time < 20, ""#F8D66D"",
+    avg_time >= 20, ""#FF7F7F""
+)",
+787,10,Avg At Scene to Enroute Formatting,"
+VAR avg_time = CALCULATE([Avg At Scene to Enroute (min)], ERR[GH mins.] > 0 && ERR[GH mins.] < 240, ERR[Incorrect MDT Stamp Flag] = 0)
+
+RETURN
+SWITCH(
+    TRUE(),
+    avg_time < 10, ""#8CD47E"",
+    avg_time < 15, ""#F8D66D"",
+    avg_time >= 15, ""#FF7F7F""
+)",
+788,10,Avg Enroute to Hosp Reach Formatting,"
+VAR avg_time = CALCULATE([Avg Enroute to Hospital Reached (min)], ERR[GH mins.] > 0 && ERR[GH mins.] < 240, ERR[Incorrect MDT Stamp Flag] = 0)
+
+RETURN
+SWITCH(
+    TRUE(),
+    avg_time < 20, ""#8CD47E"",
+    avg_time < 30, ""#F8D66D"",
+    avg_time >= 30, ""#FF7F7F""
+)",
+789,10,Avg Hosp Reach to Handover Formatting,"
+VAR avg_time = CALCULATE([Avg Hospital Reached to Handover (min)], ERR[GH mins.] > 0 && ERR[GH mins.] < 240, ERR[Incorrect MDT Stamp Flag] = 0)
+
+RETURN
+SWITCH(
+    TRUE(),
+    avg_time < 5, ""#8CD47E"",
+    avg_time < 10, ""#F8D66D"",
+    avg_time >= 10, ""#FF7F7F""
+)",
+790,10,ELC Accepted to Action %,"
+""-"" & 
+ROUND(
+    (1 - DIVIDE(
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[On Action Time])),
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Accepted Time]))
+    ))*100, 1
+) & ""%""",
+791,10,ELC Action to At Scene %,"
+""-"" & 
+ROUND(
+    (1 - DIVIDE(
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[At Scene Tme])),
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Accepted Time]))
+    ))*100, 1
+) & ""%""",
+792,10,ELC At Scene to Enroute %,"
+""-"" & 
+ROUND(
+    (1 - DIVIDE(
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Enroute Time])),
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Accepted Time]))
+    ))*100, 1
+) & ""%""",
+793,10,ELC Enroute to Hosp Reached %,"
+""-"" & 
+ROUND(
+    (1 - DIVIDE(
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Hospital Reached Time])),
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Accepted Time]))
+    ))*100, 1
+) & ""%""",
+794,10,ELC Hosp Reached to Handover %,"
+""-"" & 
+ROUND(
+    (1 - DIVIDE(
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Hospital Handoverd Time])),
+        CALCULATE([Total events (ERR)], NOT ISBLANK(ERR[Accepted Time]))
+    ))*100, 1
+) & ""%""",
+795,10,Count of DO Remarks,COUNT(ERR[ERO Remarks]),"#,0"
+796,10,ART temp,"
+VAR TotalSeconds = CALCULATE(AVERAGE(ERR[ART secs.]), ERR[ART secs.] > 0 && ERR[ART secs.] < 6000)
+VAR Hours = INT(TotalSeconds / 3600)
+VAR Minutes = INT(MOD(TotalSeconds, 3600) / 60)
+VAR Seconds = MOD(TotalSeconds, 60)
+
+RETURN
+    FORMAT(TIME(Hours, Minutes, Seconds),""hh:nn:ss"")",
+797,10,GH Temp,"CALCULATE([GH hh:mm:ss (m)], ERR[Hospital To Hospital Transfer] = FALSE(), ERR[GH Eligible] = ""Yes"", ERR[GH mins.] > 0 && ERR[GH mins.] < 240)",hh:nn:ss
+798,10,Opening ODO 2 (m),"
+CALCULATE(
+    MIN(ERR[1. On Action ODO]),
+    ERR[Date] = MIN(ERR[Date])
+)","#,0"
+799,10,Closing ODO 2 (m),"
+CALCULATE(
+    MAX(ERR[3. Hospital Reached ODO]),
+    ERR[Date] = MAX(ERR[Date])
+)","#,0"
+800,10,Fuel Amount Both Ways,SUM(ERR[Fuel Amount - One Way (Approx)])*2,
+801,10,% IFT KM available cases,"DIVIDE(SUM(ERR[IFT cases KMs availability]), [IFT Case Requests])",0.00%;-0.00%;0.00%
+802,10,Avg Events Per Active Hour,"
+VAR TotalEvents =
+    COUNT ( ERR[Event Id] )
+
+VAR ActiveHours =
+    COUNTROWS (
+        DISTINCT (
+            SELECTCOLUMNS (
+                ERR,
+                ""DateHour"",
+                FORMAT ( ERR[Calltime], ""yyyyMMddHH"" )
+            )
+        )
+    )
+
+RETURN
+    DIVIDE ( TotalEvents, ActiveHours, 0 )",
+803,10,ODO Eligible IFT Cases,"COALESCE(CALCULATE([IFT Served], ERR[Hospital To Hospital Transfer] = TRUE(), ERR[Valid ODO Flag] = 0), 0)","#,0"
+804,10,ODO Eligible IFT Cases %,"DIVIDE([ODO Eligible IFT Cases], [IFT Served])",0.00%;-0.00%;0.00%
+805,10,% IFT Served (All Subevent),"DIVIDE([IFT Served], CALCULATE([IFT Served], ALL(ERR[SUB Event Marked By MDT])))",0%;-0%;0%
+806,10,Caller District Match,"IF(SELECTEDVALUE(ERR[District (Caller)]) IN ALLSELECTED('Districts & Regions'[District]), 1, 0)",0
+807,10,Govt to Pvt %,"DIVIDE(CALCULATE([IFT Served], ERR[Govt - Pvt] = ""Govt -> Pvt""), [IFT Served])",0%;-0%;0%
+808,10,Pvt to Govt %,"DIVIDE(CALCULATE([IFT Served], ERR[Govt - Pvt] = ""Pvt -> Govt""), [IFT Served])",0%;-0%;0%
+809,10,Govt to Govt %,"DIVIDE(CALCULATE([IFT Served], ERR[Govt - Pvt] = ""Govt -> Govt""), [IFT Served])",0%;-0%;0%
+810,10,Pvt to Pvt %,"DIVIDE(CALCULATE([IFT Served], ERR[Govt - Pvt] = ""Pvt -> Pvt""), [IFT Served])",0%;-0%;0%
+811,10,Total Complete IFT ODO %,"DIVIDE(CALCULATE([ODO Eligible IFT Cases], ERR[MDT ODO Completeness] = ""Total Complete""), [ODO Eligible IFT Cases])",0.00%;-0.00%;0.00%
+812,10,Complete IFT ODO %,"DIVIDE(CALCULATE([ODO Eligible IFT Cases], ERR[MDT ODO Completeness] = ""Complete""), [ODO Eligible IFT Cases])",0.00%;-0.00%;0.00%
+813,10,Partial Complete IFT ODO %,"DIVIDE(CALCULATE([ODO Eligible IFT Cases], ERR[MDT ODO Completeness] = ""Partially Complete""), [ODO Eligible IFT Cases])",0.00%;-0.00%;0.00%
+814,10,Incomplete IFT ODO %,"DIVIDE(CALCULATE([ODO Eligible IFT Cases], ERR[MDT ODO Completeness] = ""Incomplete""), [ODO Eligible IFT Cases])",0.00%;-0.00%;0.00%
+815,10,Govt to Govt IFT Cases,"CALCULATE([IFT Served], ERR[Govt - Pvt] = ""Govt -> Govt"")","#,0"
+816,10,Lower to Higher IFT %,"DIVIDE(CALCULATE([Govt to Govt IFT Cases], ERR[Drop Type Hierarchy] = ""Lower - Higher""), [Govt to Govt IFT Cases])",0.00%;-0.00%;0.00%
+817,10,Higher to Lower IFT %,"DIVIDE(CALCULATE([Govt to Govt IFT Cases], ERR[Drop Type Hierarchy] = ""Higher - Lower""), [Govt to Govt IFT Cases])",0.00%;-0.00%;0.00%
+818,10,Transparent Color Code,"""#FFFFFF00""",
+819,10,ODO Eligible Cases,"COALESCE(CALCULATE([Dispatches], ERR[Valid ODO Flag] = 0), 0)","#,0"
+820,10,ODO Eligible Cases %,"DIVIDE([ODO Eligible Cases], [Dispatches])",0.00%;-0.00%;0.00%
+821,10,Caller Segment Match,"
+    IF(
+        ISFILTERED(Segments[Base Location]),
+        IF(SELECTEDVALUE(ERR[Caller Base Location]) IN ALLSELECTED(ERR[Ambulance Base Location]), 1, 0),
+        1
+    )",0
+822,10,Total Complete ODO %,"DIVIDE([Total Complete ODO], [Dispatches])",0.00%;-0.00%;0.00%
+823,10,Partially Complete ODO %,"DIVIDE([Partially Complete ODO], [Dispatches])",0.00%;-0.00%;0.00%
+824,10,Incomplete ODO %,"DIVIDE([Incomplete ODO], [Dispatches])",0.00%;-0.00%;0.00%
+825,10,Temp Zero,0.1,0
+826,10,Total Complete ODO,"
+CALCULATE(
+    [Dispatches],
+    FILTER(
+        ERR,
+        ERR[MDT ODO Completeness] = ""Total Complete""
+    )
+)","#,0"
+827,10,Partially Complete ODO,"
+CALCULATE(
+    [Dispatches],
+    FILTER(
+        ERR,
+        ERR[MDT ODO Completeness] = ""Partially Complete""
+    )
+)","#,0"
+828,10,Incomplete ODO,"
+CALCULATE(
+    [Dispatches],
+    FILTER(
+        ERR,
+        ERR[MDT ODO Completeness] = ""Incomplete""
+    )
+)","#,0"
+829,10,Closing ODO (MDT),"COALESCE(MAX(ERR[4. Back to Base ODO]), MAX(ERR[3. Hospital Reached ODO]), MAX(ERR[2. At Scene ODO]))","#,0"
+830,10,Opening ODO (MDT),MIN(ERR[1. On Action ODO]),"#,0"
+831,10,Emergencies Addressed,SUM(ERR[Addressed actionable calls]),"#,0"
+832,10,Emergencies Not Addressed,SUM(ERR[Not Addressed actionable calls]),"#,0"
+833,10,Same Level IFT %,"DIVIDE(CALCULATE([Govt to Govt IFT Cases], ERR[Drop Type Hierarchy] = ""Same Level""), [Govt to Govt IFT Cases])",0.00%;-0.00%;0.00%
+834,10,IFT KMS Travelled,"CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]), ERR[Hospital To Hospital Transfer] = TRUE())","#,0"
+835,10,Non IFT KMS Travelled,"CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]), ERR[Hospital To Hospital Transfer] = FALSE())","#,0"
+836,10,Non IFT cases assigned ambulance,"CALCULATE(SUM(ERR[Ambulance Assigned]),ERR[Hospital To Hospital Transfer]=FALSE())",0
+837,10,Higher to Lower,"CALCULATE([Dispatches], ERR[Drop Type Hierarchy] = ""Higher - Lower"")",0
+838,10,Higher to Lower %,"DIVIDE([Higher to Lower], [Dispatches])",0.0%;-0.0%;0.0%
+839,10,Neonatal Served,"CALCULATE([Dispatches], ERR[GH Eligible] = ""Yes"", CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal""))","#,0"
+840,10,Neonatal Served %,"DIVIDE([Neonatal Served], [Total Cases Served])",0.00%;-0.00%;0.00%
+841,10,IFT Neonatal Served %,"DIVIDE(CALCULATE([Neonatal Served], ERR[Hospital To Hospital Transfer] = TRUE()), [Neonatal Served])",0.00%;-0.00%;0.00%
+842,10,Non IFT Neonatal Served %,"DIVIDE(CALCULATE([Neonatal Served], ERR[Hospital To Hospital Transfer] = FALSE()), [Neonatal Served])",0.00%;-0.00%;0.00%
+843,10,Neonatal Segments Uptime % (CM),"CALCULATE([Neonatal Segments Uptime], Calender[Month Sort] = MAX(Calender[Month Sort]))",0.00%;-0.00%;0.00%
+844,10,Neonatal Segments Uptime % (PM),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PreviousMonthDate =
+    EOMONTH(MaxDate, -1)
+
+RETURN
+CALCULATE(
+    [Neonatal Segments Uptime],
+    YEAR('Calender'[Date]) = YEAR(PreviousMonthDate),
+    MONTH('Calender'[Date]) = MONTH(PreviousMonthDate)
+)",0.00%;-0.00%;0.00%
+845,10,Neonatal Served (CM),"CALCULATE([Neonatal Served], Calender[Month Sort] = MAX(Calender[Month Sort]))",0
+846,10,Neonatal Served (PM),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PreviousMonthDate =
+    EOMONTH(MaxDate, -1)
+
+RETURN
+    CALCULATE(
+        [Neonatal Served],
+        YEAR('Calender'[Date]) = YEAR(PreviousMonthDate),
+        MONTH('Calender'[Date]) = MONTH(PreviousMonthDate)
+    )",0
+847,10,IFT Neonatal Served % (CM),"CALCULATE([IFT Neonatal Served %], Calender[Month Sort] = MAX(Calender[Month Sort]))",0.00%;-0.00%;0.00%
+848,10,IFT Neonatal Served % (PM),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PreviousMonthDate =
+    EOMONTH(MaxDate, -1)
+
+RETURN
+CALCULATE(
+    [IFT Neonatal Served %],
+    YEAR('Calender'[Date]) = YEAR(PreviousMonthDate),
+    MONTH('Calender'[Date]) = MONTH(PreviousMonthDate)
+)",0.00%;-0.00%;0.00%
+849,10,Non IFT Neonatal Served % (CM),"CALCULATE([Non IFT Neonatal Served %], Calender[Month Sort] = MAX(Calender[Month Sort]))",0.00%;-0.00%;0.00%
+850,10,Non IFT Neonatal Served % (PM),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PreviousMonthDate =
+    EOMONTH(MaxDate, -1)
+
+RETURN
+CALCULATE(
+    [Non IFT Neonatal Served %],
+    YEAR('Calender'[Date]) = YEAR(PreviousMonthDate),
+    MONTH('Calender'[Date]) = MONTH(PreviousMonthDate)
+)",0.00%;-0.00%;0.00%
+851,10,Neonatal KMS Travelled (CM),"
+    CALCULATE(
+        [Neonatal KMS Travelled (MDT) Two Way],
+        Calender[Month Sort] = MAX(Calender[Month Sort])
+    )",
+852,10,Neonatal KMS Travelled (PM),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PreviousMonthDate =
+    EOMONTH(MaxDate, -1)
+
+RETURN
+CALCULATE(
+    [Neonatal KMS Travelled (MDT) Two Way],
+    YEAR('Calender'[Date]) = YEAR(PreviousMonthDate),
+    MONTH('Calender'[Date]) = MONTH(PreviousMonthDate)
+)",
+853,10,Neonatal IFT KMS Travelled (CM),"
+    CALCULATE(
+        [Neonatal IFT KMS Travelled (MDT) Two Way],
+        Calender[Month Sort] = MAX(Calender[Month Sort])
+    )",
+854,10,Neonatal IFT KMS Travelled (PM),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PreviousMonthDate =
+    EOMONTH(MaxDate, -1)
+
+RETURN
+    CALCULATE(
+        [Neonatal IFT KMS Travelled (MDT) Two Way],
+        YEAR('Calender'[Date]) = YEAR(PreviousMonthDate),
+        MONTH('Calender'[Date]) = MONTH(PreviousMonthDate)
+    )",
+855,10,Neonatal Non IFT KMS Travelled (CM),"
+    CALCULATE(
+        [Neonatal Non IFT KMS Travelled (MDT) Two Way], 
+        Calender[Month Sort] = MAX(Calender[Month Sort])
+    )",
+856,10,Neonatal Non IFT KMS Travelled (PM),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PreviousMonthDate =
+    EOMONTH(MaxDate, -1)
+
+RETURN
+CALCULATE(
+    [Neonatal Non IFT KMS Travelled (MDT) Two Way],
+    YEAR('Calender'[Date]) = YEAR(PreviousMonthDate),
+    MONTH('Calender'[Date]) = MONTH(PreviousMonthDate)
+)",
+857,10,Neonatal Served (CQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+RETURN
+    CALCULATE(
+        [Neonatal Served],
+        YEAR('Calender'[Date]) = YEAR(MaxDate),
+        QUARTER('Calender'[Date]) = QUARTER(MaxDate)
+    )",0
+858,10,Neonatal Served (PQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PrevQuarterDate =
+    EDATE(MaxDate, -3)
+
+RETURN
+    CALCULATE(
+        [Neonatal Served],
+        YEAR('Calender'[Date]) = YEAR(PrevQuarterDate),
+        QUARTER('Calender'[Date]) = QUARTER(PrevQuarterDate)
+    )",0
+859,10,Neonatal Segments Uptime % (CQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+RETURN
+CALCULATE(
+    [Neonatal Segments Uptime],
+    YEAR('Calender'[Date]) = YEAR(MaxDate),
+    QUARTER('Calender'[Date]) = QUARTER(MaxDate)
+)",0.00%;-0.00%;0.00%
+860,10,Neonatal Segments Uptime % (PQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PrevQuarterDate =
+    EDATE(MaxDate, -3)
+
+RETURN
+CALCULATE(
+    [Neonatal Segments Uptime],
+    YEAR('Calender'[Date]) = YEAR(PrevQuarterDate),
+    QUARTER('Calender'[Date]) = QUARTER(PrevQuarterDate)
+)",
+861,10,IFT Neonatal Served % (CQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+RETURN
+CALCULATE(
+    [IFT Neonatal Served %],
+    YEAR('Calender'[Date]) = YEAR(MaxDate),
+    QUARTER('Calender'[Date]) = QUARTER(MaxDate)
+)",0.00%;-0.00%;0.00%
+862,10,IFT Neonatal Served % (PQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PrevQuarterDate =
+    EDATE(MaxDate, -3)
+
+RETURN
+CALCULATE(
+    [IFT Neonatal Served %],
+    YEAR('Calender'[Date]) = YEAR(PrevQuarterDate),
+    QUARTER('Calender'[Date]) = QUARTER(PrevQuarterDate)
+)",0.00%;-0.00%;0.00%
+863,10,Non IFT Neonatal Served % (CQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+RETURN
+CALCULATE(
+    [Non IFT Neonatal Served %],
+    YEAR('Calender'[Date]) = YEAR(MaxDate),
+    QUARTER('Calender'[Date]) = QUARTER(MaxDate)
+)",0.00%;-0.00%;0.00%
+864,10,Non IFT Neonatal Served % (PQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PrevQuarterDate =
+    EDATE(MaxDate, -3)
+
+RETURN
+CALCULATE(
+    [Non IFT Neonatal Served %],
+    YEAR('Calender'[Date]) = YEAR(PrevQuarterDate),
+    QUARTER('Calender'[Date]) = QUARTER(PrevQuarterDate)
+)",0.00%;-0.00%;0.00%
+865,10,Neonatal KMS Travelled (CQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+RETURN
+CALCULATE(
+    [Neonatal KMS Travelled (MDT) Two Way],
+    YEAR('Calender'[Date]) = YEAR(MaxDate),
+    QUARTER('Calender'[Date]) = QUARTER(MaxDate)
+)",
+866,10,Neonatal KMS Travelled (PQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PrevQuarterDate =
+    EDATE(MaxDate, -3)
+
+RETURN
+CALCULATE(
+    [Neonatal KMS Travelled (MDT) Two Way],
+    YEAR('Calender'[Date]) = YEAR(PrevQuarterDate),
+    QUARTER('Calender'[Date]) = QUARTER(PrevQuarterDate)
+)",
+867,10,Neonatal IFT KMS Travelled (CQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+RETURN
+    CALCULATE(
+        [Neonatal IFT KMS Travelled (MDT) Two Way],
+        YEAR('Calender'[Date]) = YEAR(MaxDate),
+        QUARTER('Calender'[Date]) = QUARTER(MaxDate)
+    )",
+868,10,Neonatal IFT KMS Travelled (PQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PrevQuarterDate =
+    EDATE(MaxDate, -3)
+
+RETURN
+CALCULATE(
+    [Neonatal IFT KMS Travelled (MDT) Two Way],
+    YEAR('Calender'[Date]) = YEAR(PrevQuarterDate),
+    QUARTER('Calender'[Date]) = QUARTER(PrevQuarterDate)
+)",
+869,10,Neonatal Non IFT KMS Travelled (CQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+RETURN
+    CALCULATE(
+        [Neonatal Non IFT KMS Travelled (MDT) Two Way],
+        YEAR('Calender'[Date]) = YEAR(MaxDate),
+        QUARTER('Calender'[Date]) = QUARTER(MaxDate)
+    )",
+870,10,Neonatal Non IFT KMS Travelled (PQ),"
+VAR MaxDate =
+    MAX('Calender'[Date])
+
+VAR PrevQuarterDate =
+    EDATE(MaxDate, -3)
+
+RETURN
+    CALCULATE(
+        [Neonatal Non IFT KMS Travelled (MDT) Two Way],
+        YEAR('Calender'[Date]) = YEAR(PrevQuarterDate),
+        QUARTER('Calender'[Date]) = QUARTER(PrevQuarterDate)
+    )",
+871,10,Neonatal Served (CW),"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+    CALCULATE (
+        [Neonatal Served],
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Year] = PREVYEAR &&
+            'Calender'[Week Sort] = VALIDWEEK
+        )
+    )",0
+872,10,Neonatal Served (PW),"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+    CALCULATE (
+        [Neonatal Served],
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Year] = PREVYEAR &&
+            'Calender'[Week Sort] = PREVWEEK
+        )
+    )",0
+873,10,Neonatal Segments Uptime % (CW),"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+CALCULATE (
+    [Neonatal Segments Uptime],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = VALIDWEEK
+    )
+)",0.00%;-0.00%;0.00%
+874,10,Neonatal Segments Uptime % (PW),"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+CALCULATE (
+    [Neonatal Segments Uptime],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = PREVWEEK
+    )
+)",0.00%;-0.00%;0.00%
+875,10,IFT Neonatal Served % (CW),"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+CALCULATE (
+    [IFT Neonatal Served %],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = VALIDWEEK
+    )
+)",0.00%;-0.00%;0.00%
+876,10,IFT Neonatal Served % (PW),"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+CALCULATE (
+    [IFT Neonatal Served %],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = PREVWEEK
+    )
+)",0.00%;-0.00%;0.00%
+877,10,Non IFT Neonatal Served % (CW),"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+CALCULATE (
+    [Non IFT Neonatal Served %],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = VALIDWEEK
+    )
+)",0.00%;-0.00%;0.00%
+878,10,Non IFT Neonatal Served % (PW),"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+CALCULATE (
+    [Non IFT Neonatal Served %],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = PREVWEEK
+    )
+)",0.00%;-0.00%;0.00%
+879,10,Neonatal KMS Travelled (CW),"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+CALCULATE (
+    [Neonatal KMS Travelled (MDT) Two Way],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = VALIDWEEK
+    )
+)",
+880,10,Neonatal KMS Travelled (PW),"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+CALCULATE (
+    [Neonatal KMS Travelled (MDT) Two Way],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = PREVWEEK
+    )
+)",
+881,10,Neonatal IFT KMS Travelled (CW),"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+    CALCULATE (
+        [Neonatal IFT KMS Travelled (MDT) Two Way],
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Year] = PREVYEAR &&
+            'Calender'[Week Sort] = VALIDWEEK
+        )
+    )",
+882,10,Neonatal IFT KMS Travelled (PW),"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+CALCULATE (
+    [Neonatal IFT KMS Travelled (MDT) Two Way],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = PREVWEEK
+    )
+)",
+883,10,Neonatal Non IFT KMS Travelled (CW),"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+CALCULATE (
+    [Neonatal Non IFT KMS Travelled (MDT) Two Way],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = VALIDWEEK
+    )
+)",
+884,10,Neonatal Non IFT KMS Travelled (PW),"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+    CALCULATE (
+        [Neonatal Non IFT KMS Travelled (MDT) Two Way],
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Year] = PREVYEAR &&
+            'Calender'[Week Sort] = PREVWEEK
+        )
+    )",
+885,10,Neonatal Served % (Out of all),"DIVIDE([Neonatal Served], CALCULATE([Neonatal Served], ALL('Districts & Regions'), ALL(Segments)))",0.00%;-0.00%;0.00%
+886,10,IFT Dispatches/Requests %,"DIVIDE([IFT Served], [IFT Case Requests])",0%;-0%;0%
+887,10,IFT Discard,[IFT Case Requests] - [IFT Served],"#,0"
+888,10,% base location ODOs,"DIVIDE(COUNT(ERR[4. Back to Base ODO]), [Dispatches])",0%;-0%;0%
+889,10,O-O Difference Case wise,"
+VAR CurVehicle =
+    SELECTEDVALUE(ERR[Vehicle Id])
+
+VAR CurCallTime =
+    SELECTEDVALUE(ERR[Calltime])
+
+VAR CurODO =
+    SELECTEDVALUE(ERR[1. On Action ODO])
+
+VAR NextODO =
+    MAXX(
+        TOPN(
+            1,
+            FILTER(
+                ALL(ERR),
+                ERR[Vehicle Id] = CurVehicle &&
+                ERR[Calltime] > CurCallTime &&
+                NOT ISBLANK(ERR[1. On Action ODO])
+            ),
+            ERR[Calltime], ASC
+        ),
+        ERR[1. On Action ODO]
+    )
+
+VAR Diff = NextODO - CurODO
+
+RETURN
+IF(
+    ISBLANK(CurODO) ||
+    ISBLANK(NextODO) ||
+    Diff < 0 ||
+    Diff > 1000,
+    BLANK(),
+    Diff
+)",
+890,10,Abandoned Cases,SUM(ERR[Abandoned After Dispatch]),"#,0"
+891,10,KMS Travelled (MDT) (On Action to At Scene),"
+SUMX(
+    ERR,
+    VAR Opening_ODO = ERR[1. On Action ODO]
+    VAR Closing_ODO =
+        MAX(ERR[2. At Scene ODO], Opening_ODO)
+
+    VAR MDT_KMS =
+        Closing_ODO - Opening_ODO
+
+    RETURN
+        SWITCH(
+            TRUE(),
+            ISBLANK(Opening_ODO) ||
+            ISBLANK(Closing_ODO) ||
+            MDT_KMS < 0 || MDT_KMS >= 1000,
+            BLANK(),
+            MDT_KMS
+        )
+)","#,0"
+892,10,KMS Travelled (MDT) (At Scene to Hosp Reached),"
+SUMX(
+    ERR,
+    VAR Opening_ODO = ERR[2. At Scene ODO]
+    VAR Closing_ODO =
+        MAX(ERR[3. Hospital Reached ODO], Opening_ODO)
+
+    VAR MDT_KMS =
+        Closing_ODO - Opening_ODO
+
+    RETURN
+        SWITCH(
+            TRUE(),
+            ISBLANK(Opening_ODO) ||
+            ISBLANK(Closing_ODO) ||
+            Closing_ODO < Opening_ODO ||
+            MDT_KMS < 0 || MDT_KMS > 1000,
+            0,
+            MDT_KMS
+        )
+)","#,0"
+893,10,KMS Travelled (MDT) (Hosp Reached to Back to Base),"
+SUMX(
+    ERR,
+    VAR Opening_ODO = ERR[3. Hospital Reached ODO]
+    VAR Closing_ODO =
+        MAX(ERR[4. Back to Base ODO], Opening_ODO)
+
+    VAR MDT_KMS =
+        Closing_ODO - Opening_ODO
+
+    RETURN
+        SWITCH(
+            TRUE(),
+            ISBLANK(Opening_ODO) ||
+            ISBLANK(Closing_ODO) ||
+            Closing_ODO < Opening_ODO ||
+            MDT_KMS < 0 || MDT_KMS > 1000,
+            0,
+            MDT_KMS
+        )
+)","#,0"
+894,10,Abandoned Cases KMs %,"
+DIVIDE(
+    CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]), ERR[Abandoned After Dispatch] = 1, NOT ISBLANK(ERR[On Action Time])),
+    CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]))
+)    ",0.00%;-0.00%;0.00%
+895,10,At Scene >30 KMs %,"
+DIVIDE(
+    CALCULATE([KMS Travelled (MDT) (On Action to At Scene)], NOT ERR[Range of KMS till At Scene] IN {""Wrong ODO"", ""No KMS"", ""<=30 KM""}),
+    [KMS Travelled (MDT) (On Action to At Scene)]
+)    ",0.00%;-0.00%;0.00%
+896,10,At Scene <30 KMs %,"
+DIVIDE(
+    CALCULATE([KMS Travelled (MDT) (On Action to At Scene)], ERR[Range of KMS till At Scene] = ""<=30 KM""),
+    [KMS Travelled (MDT) (On Action to At Scene)]
+)    ",0.00%;-0.00%;0.00%
+897,10,On Action to Scene KMs %,"
+DIVIDE(
+    [KMS Travelled (MDT) (On Action to At Scene)],
+    SUM(ERR[KMS Travelled (MDT) Two Way])
+)    ",0.00%;-0.00%;0.00%
+898,10,At Scene to Hosp KMs %,"
+DIVIDE(
+    [KMS Travelled (MDT) (At Scene to Hosp Reached)],
+    SUM(ERR[KMS Travelled (MDT) Two Way])
+)    ",0.00%;-0.00%;0.00%
+899,10,Hosp to Base KMs %,"
+DIVIDE(
+    [KMS Travelled (MDT) (Hosp Reached to Back to Base)],
+    SUM(ERR[KMS Travelled (MDT) Two Way])
+)    ",0.00%;-0.00%;0.00%
+900,10,KMS Travelled (MDT) (On Action to At Scene) >30 KMs,"
+SUMX(
+    ERR,
+    VAR Opening_ODO = ERR[1. On Action ODO]
+    VAR Closing_ODO =
+        MAX(ERR[2. At Scene ODO], Opening_ODO)
+
+    VAR MDT_KMS =
+        Closing_ODO - Opening_ODO
+
+    RETURN
+        SWITCH(
+            TRUE(),
+            ISBLANK(Opening_ODO) ||
+            ISBLANK(Closing_ODO) ||
+            Closing_ODO < Opening_ODO ||
+            MDT_KMS <= 30 || MDT_KMS > 1000,
+            0,
+            MDT_KMS
+        )
+)","#,0"
+901,10,Abandoned Cases KMs,"CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]), ERR[Abandoned After Dispatch] = 1, NOT ISBLANK(ERR[On Action Time]))","#,0"
+902,10,size,LEN(MAX(ERR[ERO Marked Address])),0
+903,10,% KMs Travelled - IFT,"DIVIDE(CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]), ERR[Hospital To Hospital Transfer] = TRUE()), SUM(ERR[KMS Travelled (MDT) Two Way]))",0.00%;-0.00%;0.00%
+904,10,% KMs Travelled - Non IFT,"DIVIDE(CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]), ERR[Hospital To Hospital Transfer] = FALSE()), SUM(ERR[KMS Travelled (MDT) Two Way]))",0.00%;-0.00%;0.00%
+905,10,Abandoned Cases ODO,"CALCULATE(SUM(ERR[Abandoned After Dispatch]), NOT ISBLANK(ERR[On Action Time]))","#,0"
+906,10,At Scene ODO Stamps %,"DIVIDE(COUNT(ERR[2. At Scene ODO]), [ART Eligible (m)])",0.00%;-0.00%;0.00%
+907,10,On Action ODO Stamps %,"DIVIDE(COUNT(ERR[1. On Action ODO]), [Dispatches])",0.00%;-0.00%;0.00%
+908,10,Hospital Reached ODO Stamps %,"DIVIDE(COUNT(ERR[3. Hospital Reached ODO]), CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes""))",0.00%;-0.00%;0.00%
+909,10,Back to Base ODO Stamps %,"DIVIDE(COUNT(ERR[4. Back to Base ODO]), [Dispatches])",0.00%;-0.00%;0.00%
+910,10,Hospital Reached <100 KMs %,"
+DIVIDE(
+    CALCULATE([KMS Travelled (MDT) (At Scene to Hosp Reached)], ERR[Range of KMS Scene to Hosp] IN {""<=30 KM"", ""31-50 KM"", ""51-100 KM""}),
+    [KMS Travelled (MDT) (At Scene to Hosp Reached)]
+)",0.00%;-0.00%;0.00%
+911,10,Hospital Reached >500 KMs %,"
+DIVIDE(
+    CALCULATE([KMS Travelled (MDT) (At Scene to Hosp Reached)], ERR[Range of KMS Scene to Hosp] IN {""101-200 KM"", ""201-500 KM"", "">500 KM""}),
+    [KMS Travelled (MDT) (At Scene to Hosp Reached)]
+)",0.00%;-0.00%;0.00%
+912,10,Back to Base <30 KMs %,"
+DIVIDE(
+    CALCULATE([KMS Travelled (MDT) (Hosp Reached to Back to Base)], ERR[Range of KMS Hosp to Base] = ""<=30 KM""),
+    [KMS Travelled (MDT) (Hosp Reached to Back to Base)]
+)    ",0.00%;-0.00%;0.00%
+913,10,Back to Base >30 KMs %,"
+DIVIDE(
+    CALCULATE([KMS Travelled (MDT) (Hosp Reached to Back to Base)], NOT ERR[Range of KMS Hosp to Base] IN {""Wrong ODO"", ""No KMS"", ""<=30 KM""}),
+    [KMS Travelled (MDT) (Hosp Reached to Back to Base)]
+)    ",0.00%;-0.00%;0.00%
+914,10,At Scene <30 KMs Cases %,"
+DIVIDE(
+    CALCULATE([ART Eligible (m)], ERR[Range of KMS till At Scene] = ""<=30 KM""),
+    [ART Eligible (m)]
+)    ",0.00%;-0.00%;0.00%
+915,10,At Scene >30 KMs Cases %,"
+DIVIDE(
+    CALCULATE([ART Eligible (m)], NOT ERR[Range of KMS till At Scene] IN {""Wrong ODO"", ""No KMS"", ""<=30 KM""}),
+    [ART Eligible (m)]
+)    ",0.00%;-0.00%;0.00%
+916,10,Hosp Reach >100 KMs Cases %,"
+DIVIDE(
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"", ERR[Range of KMS Scene to Hosp] IN {""101-200 KM"", ""201-500 KM"", "">500 KM""}),
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"")
+)    ",0.00%;-0.00%;0.00%
+917,10,Hosp Reach <100 KMs Cases %,"
+DIVIDE(
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"", ERR[Range of KMS Scene to Hosp] IN {""<=30 KM"", ""31-50 KM"", ""51-100 KM""}),
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"")
+)    ",0.00%;-0.00%;0.00%
+918,10,Back to Base >30 KMs Cases %,"
+DIVIDE(
+    CALCULATE([Dispatches], NOT ERR[Range of KMS Hosp to Base] IN {""Wrong ODO"", ""No KMS"", ""<=30 KM""}),
+    [Dispatches]
+)",0.00%;-0.00%;0.00%
+919,10,Back to Base <30 KMs Cases %,"
+DIVIDE(
+    CALCULATE([Dispatches], ERR[Range of KMS Hosp to Base] = ""<=30 KM""),
+    [Dispatches]
+)    ",0.00%;-0.00%;0.00%
+920,10,At Scene Wrong ODO Cases %,"
+DIVIDE(
+    CALCULATE([ART Eligible (m)], ERR[Range of KMS till At Scene] = ""Wrong ODO""),
+    [ART Eligible (m)]
+)",0.00%;-0.00%;0.00%
+921,10,At Scene No KMS Cases %,"
+DIVIDE(
+    CALCULATE([ART Eligible (m)], ERR[Range of KMS till At Scene] = ""No KMS""),
+    [ART Eligible (m)]
+)",0.00%;-0.00%;0.00%
+922,10,Hosp Reach Wrong ODO Cases %,"
+DIVIDE(
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"", ERR[Range of KMS Scene to Hosp] = ""Wrong ODO""),
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"")
+)    ",0.00%;-0.00%;0.00%
+923,10,Hosp Reach No KMS Cases %,"
+DIVIDE(
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"", ERR[Range of KMS Scene to Hosp] = ""No KMS""),
+    CALCULATE([Total events (ERR)], ERR[GH Eligible] = ""Yes"")
+)    ",0.00%;-0.00%;0.00%
+924,10,Back to Base Wrong ODO Cases %,"
+DIVIDE(
+    CALCULATE([Dispatches], ERR[Range of KMS Hosp to Base] = ""Wrong ODO""),
+    [Dispatches]
+)    ",0.00%;-0.00%;0.00%
+925,10,Back to Base No KMS Cases %,"
+DIVIDE(
+    CALCULATE([Dispatches], ERR[Range of KMS Hosp to Base] = ""No KMS""),
+    [Dispatches]
+)    ",0.00%;-0.00%;0.00%
+926,10,Avg MDT KMS per Day,"
+DIVIDE(
+    SUM(ERR[KMS Travelled (MDT) Two Way]),
+    DISTINCTCOUNT(Calender[Date])
+)","#,0.00"
+927,10,Daily MDT KMS Change,"
+IF(
+    NOT ISBLANK(SUM(ERR[KMS Travelled (MDT) Two Way]))
+    && NOT ISBLANK([Previous Day MDT KMS Travelled]), 
+    SUM(ERR[KMS Travelled (MDT) Two Way]) - [Previous Day MDT KMS Travelled]
+)","#,0"
+928,10,Daily MDT KMS Change %,"
+DIVIDE(
+    [Daily MDT KMS Change],
+    [Previous Day MDT KMS Travelled]
+)",0.00%;-0.00%;0.00%
+929,10,Previous Day MDT KMS Travelled,"
+VAR Prev_Day = 
+CALCULATE(
+    MAX(Calender[Date]), 
+    Calender[Date] < MAX(Calender[Date]) && SUM(ERR[KMS Travelled (MDT) Two Way]) <> BLANK()
+)
+
+RETURN
+CALCULATE(
+    SUM(ERR[KMS Travelled (MDT) Two Way]),
+    --Calender[Date] = Prev_Day
+    DATEADD(Calender[Date], -1, DAY)
+)","#,0"
+930,10,Previous Day Dispatches,"
+CALCULATE(
+    [Dispatches],
+    DATEADD(Calender[Date], -1, DAY)
+)","#,0"
+931,10,Current Day Dispatches,"CALCULATE([Dispatches], NOT ISBLANK(ERR[On Action Time]))",0
+932,10,Avg MDT KMS per Trip,"DIVIDE(SUM(ERR[KMS Travelled (MDT) Two Way]), CALCULATE([Dispatches], NOT ISBLANK(ERR[On Action Time])))",0
+933,10,MDT KMS Decreasing Reason,"
+IF(
+    [Daily MDT KMS Change %] < -0.1,
+    SWITCH(
+        TRUE(),
+        [Current Day Dispatches] < [Previous Day Dispatches], ""Less Trips""
+    )
+)",
+934,10,% IFT cases assigned prev day,"CALCULATE(DIVIDE([IFT Served], SUM(ERR[Ambulance Assigned])), DATEADD(Calender[Date], -1, DAY))",0%;-0%;0%
+935,10,Monthly MDT KMS Change,"IF(NOT ISBLANK(SUM(ERR[KMS Travelled (MDT) Two Way])) &&  NOT ISBLANK([Previous Month MDT KMS Travelled]), SUM(ERR[KMS Travelled (MDT) Two Way]) - [Previous Month MDT KMS Travelled])","#,0"
+936,10,Previous Month MDT KMS Travelled,"
+CALCULATE(
+    SUM(ERR[KMS Travelled (MDT) Two Way]),
+    DATEADD(Calender[Date], -1, MONTH)
+)","#,0"
+937,10,Monthly MDT KMS Change %,"
+DIVIDE(
+    [Monthly MDT KMS Change],
+    [Previous Month MDT KMS Travelled]
+)",0.00%;-0.00%;0.00%
+938,10,Previous Month Dispatches,"
+CALCULATE(
+    [Dispatches],
+    DATEADD(Calender[Date], -1, MONTH)
+)",0
+939,10,Previous Week MDT KMS Travelled,"
+VAR Current_Week = MAX('Calender'[Week Sort])
+
+VAR ValidCurrentWeek =
+    IF(
+        MOD(Current_Week,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < Current_Week &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        Current_Week
+    )
+
+VAR PreviousWeek =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < ValidCurrentWeek &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+CALCULATE(
+    SUM(ERR[KMS Travelled (MDT) Two Way]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Week Sort] = PreviousWeek
+    )
+)","#,0"
+940,10,Weekly MDT KMS Change,"
+IF(
+    NOT ISBLANK(SUM(ERR[KMS Travelled (MDT) Two Way])) && NOT ISBLANK([Previous Week MDT KMS Travelled]),
+    SUM(ERR[KMS Travelled (MDT) Two Way]) - [Previous Week MDT KMS Travelled]
+)","#,0"
+941,10,Current Week MDT KMS Travelled,"
+VAR CURRMONTH = MAX('Calender'[Month Number])
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR CURRWEEK = 
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        'Calender'[Year] = CURRYEAR
+    )
+VAR VALIDWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+RETURN
+CALCULATE (
+    SUM(ERR[KMS Travelled (MDT) Two Way]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = VALIDWEEK
+    )
+)",
+942,10,Weekly MDT KMS Change %,"
+DIVIDE(
+    [Weekly MDT KMS Change],
+    [Previous Week MDT KMS Travelled]
+)",0.00%;-0.00%;0.00%
+944,10,Previous Week Dispatches,"
+VAR CURRWEEK = MAX('Calender'[Week Sort])
+VAR CURRMONTH = CALCULATE(
+    MAX('Calender'[Month Number]),
+    'Calender'[Year] = MAX('Calender'[Year])
+)
+VAR CURRYEAR = MAX('Calender'[Year])
+VAR PREVYEAR = IF(CURRMONTH = 1, CURRYEAR - 1, CURRYEAR)
+
+VAR VALIDCURRWEEK =
+    IF(
+        MOD(CURRWEEK,100) = 5,
+        CALCULATE(
+            MAX('Calender'[Week Sort]),
+            FILTER(
+                ALL('Calender'),
+                'Calender'[Week Sort] < CURRWEEK &&
+                MOD('Calender'[Week Sort],100) <> 5
+            )
+        ),
+        CURRWEEK
+    )
+
+VAR PREVWEEK =
+    CALCULATE(
+        MAX('Calender'[Week Sort]),
+        FILTER(
+            ALL('Calender'),
+            'Calender'[Week Sort] < VALIDCURRWEEK &&
+            MOD('Calender'[Week Sort],100) <> 5
+        )
+    )
+
+RETURN
+CALCULATE (
+    [Dispatches],
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Year] = PREVYEAR &&
+        'Calender'[Week Sort] = PREVWEEK
+    )
+)","#,0"
+945,10,Avg Cases/Segment,"DIVIDE([Dispatches], DISTINCTCOUNT(ERR[Ambulance Base Location]))",
+946,10,Avg Cases/Month,"DIVIDE([Dispatches], DISTINCTCOUNT(Calender[Month]))",
+947,10,Current Month & Year #,"
+""# "" & CALCULATE(
+    MAX('Calender'[Month]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Month Sort] = MAX('Month Slicer'[Month Sort])
+    )
+)",
+16594,10,1st Ambulance Assigned %,"DIVIDE(CALCULATE([Dispatches], ERR[Vehicle Assigned Number] = 1), [Dispatches])",0.00%;-0.00%;0.00%
+16597,10,Missed IFT Dispatch/Requests %,"DIVIDE([Missed IFT Dispatches], [IFT Case Requests])",0.00%;-0.00%;0.00%
+26649,10,Missed IFT Dispatches,"CALCULATE([Missed Dispatches], ERR[Hospital To Hospital Transfer] = TRUE())","#,0"
+27194,10,Least Month Missed/Request %,"MINX(VALUES(Calender[Month]), [Missed IFT Dispatch/Requests %])",0.00%;-0.00%;0.00%
+27198,10,Latest Month Missed/Requests %,"CALCULATE([Missed IFT Dispatch/Requests %], Calender[Month Sort] = MAX(Calender[Month Sort]))",0.00%;-0.00%;0.00%
+27202,10,Latest - Least Month diff %,[Latest Month Missed/Requests %] - [Least Month Missed/Request %],0.00%;-0.00%;0.00%
+61236,10,Avg KM/Day MDT,"
+DIVIDE(
+    SUM(ERR[KMS Travelled (MDT) Two Way]),
+    DISTINCTCOUNT(Calender[Date])
+)","#,0"
+61241,10,Diff from Avg KMs per Day,"[Avg KM/Day MDT] - CALCULATE([Avg KM/Day MDT], ALLEXCEPT(Calender, Calender[Year]))","#,0"
+61247,10,Avg KM/Dispatch MDT,"DIVIDE(SUM(ERR[KMS Travelled (MDT) Two Way]), [Dispatches])","#,0"
+61256,10,Diff from Avg KMs per Dispatch,"[Avg KM/Dispatch MDT] - CALCULATE([Avg KM/Dispatch MDT], ALLEXCEPT(Calender, Calender[Year]))","#,0"
+61260,10,IFT Dispatches % Change %,"
+[IFT Served %] - 
+CALCULATE(
+    [IFT Served %],
+    DATEADD(Calender[Date], -1, MONTH)
+)",0%;-0%;0%
+61271,10,Wrong MDT ODO %,"DIVIDE(CALCULATE([Dispatches], ERR[Range of KMS] = ""Wrong ODO"" || ERR[Range of KMS] = ""No KMS""), [Dispatches])",0.00%;-0.00%;0.00%
+72729,10,KMS Travelled (MDT) Text,"SUM(ERR[KMS Travelled (MDT) Two Way]) & "" KMs""",
+133608,10,Non IFT Dispatches,"CALCULATE([Dispatches], ERR[Hospital To Hospital Transfer]=FALSE())","#,0"
+133615,10,KMS Travelled (MDT) in Lakhs Text,"
+VAR kms = SUM(ERR[KMS Travelled (MDT) Two Way])
+VAR kms_in_lakhs = ROUND(kms/100000, 2)
+VAR kms_in_thousands = ROUND(kms/1000, 2)
+
+RETURN
+IF(
+    kms >= 100000, kms_in_lakhs & "" L"",
+    kms_in_thousands & "" K""
+)",
+133619,10,KMS Travelled Raw (MDT) in Lakhs Text,"
+VAR kms = SUM(ERR[KMS Travelled (MDT) Raw Two Way])
+VAR kms_in_lakhs = ROUND(kms/100000, 2)
+VAR kms_in_thousands = ROUND(kms/1000, 2)
+
+RETURN
+IF(
+    kms >= 100000, kms_in_lakhs & "" L"",
+    kms_in_thousands & "" K""
+)",
+133621,10,Year Filter Active,"IF(ISFILTERED(Calender[Year]), ""#EB99B7"", ""#EBEBEB"")",
+133623,10,Month Filter Active,"IF(ISFILTERED(Calender[Month & Year]), ""#EB99B7"", ""#EBEBEB"")",
+133625,10,Week Filter Active,"IF(ISFILTERED(Calender[Week in Month]), ""#EB99B7"", ""#EBEBEB"")",
+133627,10,Date Filter Active,"IF(ISFILTERED(Calender[Date]), ""#EB99B7"", ""#EBEBEB"")",
+133629,10,Region Filter Active,"IF(ISFILTERED('Districts & Regions'[Region]), ""#EB99B7"")",
+133631,10,District Filter Active,"IF(ISFILTERED('Districts & Regions'[District]), ""#EB99B7"")",
+133633,10,Segment Filter Active,"IF(ISFILTERED(Segments[Base Location]), ""#EB99B7"")",
+133635,10,Locality Filter Active,"IF(ISFILTERED(Locality[Locality]), ""#EB99B7"")",
+133637,10,Vehicle Filter Active,"IF(ISFILTERED('Vehicles Master Database'[Vehicle Number]), ""#EB99B7"")",
+133639,10,IFT Label Filter Active,"IF(ISFILTERED(ERR[IFT Label]), ""#EB99B7"")",
+133641,10,Neonatal Filter Active,"IF(ISFILTERED(ERR[Neonatal Flag]), ""#EB99B7"")",
+184641,10,Previous Day IFT Dispatches,"
+CALCULATE(
+    [IFT Served],
+    DATEADD(Calender[Date], -1, DAY)
+)",0
+184643,10,Previous Day IFT KMS Travelled,"
+CALCULATE(
+    [IFT KMS Travelled],
+    DATEADD(Calender[Date], -1, DAY)
+)","#,0"
+205284,10,Avg KMs per Dispatch - At Scene to Hosp One Way,"
+DIVIDE(
+    [KMS Travelled (MDT) (At Scene to Hosp Reached)], 
+    [Dispatches]
+)",
+205287,10,Avg KMs per Dispatch One Way,"DIVIDE(SUM(ERR[KMS Travelled (MDT) One Way]), [Dispatches])",
+214958,10,KMS Travelled (MDT) Projected,"
+VAR ActualKMS =
+    CALCULATE(SUM(ERR[KMS Travelled (MDT) Two Way]), Calender[Month] = SELECTEDVALUE(Calender[Month]))
+
+VAR SelectedDate =
+    MAX(Calender[Date])
+
+VAR End_of_month =
+    EOMONTH(SelectedDate, 0)
+
+VAR TotalDaysInMonth =
+    DAY(End_of_month)
+
+VAR DaysWithData =
+    DAY(MAX('Combined ODO'[Date]))
+
+VAR AvgKMSPerDay = CALCULATE([Avg KM/Day MDT], Calender[Month] = SELECTEDVALUE(Calender[Month]))
+
+VAR RemainingDays =
+    TotalDaysInMonth - DaysWithData
+
+RETURN
+    IF(
+        ISINSCOPE(Calender[Month])
+            || (
+                ISINSCOPE(Calender[Month])
+                && NOT ISINSCOPE(Calender[Day])
+            ),
+        ActualKMS + (RemainingDays * AvgKMSPerDay),
+        ActualKMS
+    )","#,0"
+277028,10,Private Hosp Served,"CALCULATE([Dispatches], ERR[GH Eligible] = ""Yes"", ERR[Drop Type Lookup] = ""Pvt"")","#,0"
+277030,10,% Private Hosp Served,"DIVIDE([Private Hosp Served], [Total Cases Served])",0.00%;-0.00%;0.00%
+277625,10,Total Cases Served,"CALCULATE([Dispatches], ERR[GH Eligible] = ""Yes"")","#,0"
+277629,10,IFT Dispatches,"CALCULATE([Dispatches], ERR[Hospital To Hospital Transfer]=TRUE())","#,0"
+277631,10,IFT Abandoned %,"DIVIDE([IFT Abandoned (Before + After At Scene)], [IFT Dispatches])",0.00%;-0.00%;0.00%
+277635,10,IFT Dispatches %,"DIVIDE([IFT Dispatches], [Dispatches])",0.00%;-0.00%;0.00%
+278400,10,IFT Served out of Total Diapatches %,"DIVIDE([IFT Served], [Dispatches])",0.00%;-0.00%;0.00%
+286911,10,Total Cases Served %,"DIVIDE([Total Cases Served], [Total events (ERR)])",0.00%;-0.00%;0.00%
+286914,10,Non IFT Dispatches %,"DIVIDE([Non IFT Dispatches], [Dispatches])",0%;-0%;0%
+286917,10,Non IFT Served,"CALCULATE([Dispatches], ERR[GH Eligible] = ""Yes"", ERR[Hospital To Hospital Transfer]=FALSE())","#,0"
+286919,10,Non IFT Served %,"DIVIDE([Non IFT Served], [Total Cases Served])",0%;-0%;0%
+287029,10,IFT KMS Travelled %,"DIVIDE([IFT KMS Travelled], SUM(ERR[KMS Travelled (MDT) Two Way]))",0.00%;-0.00%;0.00%
+287032,10,Non-IFT KMS Travelled %,"DIVIDE([Non IFT KMS Travelled], SUM(ERR[KMS Travelled (MDT) Two Way]))",0.00%;-0.00%;0.00%
+339548,10,Avg KM/District Served MDT,"
+    CALCULATE(
+        DIVIDE(
+            SUM(ERR[KMS Travelled (MDT) Two Way]),
+            DISTINCTCOUNT(ERR[District Final])
+        ),
+        ERR[GH Eligible] = ""Yes""
+    )","#,0"
+339553,10,Avg KM/Vehicle MDT (Served),"
+    CALCULATE(
+        DIVIDE(
+            SUM(ERR[KMS Travelled (MDT) Two Way]),
+            DISTINCTCOUNT(ERR[Vehicle Id])
+        ),
+        ERR[GH Eligible] = ""Yes""
+    )","#,0"
+339579,10,Avg KM/Served MDT,"DIVIDE(SUM(ERR[KMS Travelled (MDT) Two Way]), [Total Cases Served])","#,0"
+339583,10,Avg KM/IFT Served MDT,"DIVIDE([IFT KMS Travelled], [IFT Served])","#,0"
+339586,10,Avg KM/Non IFT Served MDT,"DIVIDE([Non IFT KMS Travelled], [Non IFT Served])","#,0"
+339594,10,Avg KM/Case - ART MDT,"DIVIDE([KMS Travelled (MDT) (On Action to At Scene)], CALCULATE([Dispatches], ERR[ART Eligible] = ""Yes""))","#,0"
+339619,10,On Action to At Scene KMs Asigned Order > 2,"IF(MAX(ERR[Assigned order]) >= 2, [KMS Travelled (MDT) (On Action to At Scene)], BLANK())","#,0"
+339623,10,At Scene to Hospital KMs Asigned Order > 2,"IF(MAX(ERR[Assigned order]) >= 2, [KMS Travelled (MDT) (At Scene to Hosp Reached)], BLANK())","#,0"
+339627,10,Hopsital to Base KMs Asigned Order > 2,"IF(MAX(ERR[Assigned order]) >= 2, [KMS Travelled (MDT) (Hosp Reached to Back to Base)], BLANK())","#,0"
+368858,10,Cases without On Action ODO,"CALCULATE([Dispatches], ISBLANK(ERR[1. On Action ODO]), Calender[Date Availability (ODO)] = 1)","#,0"
+380051,10,Neonatal KMS Travelled (MDT) Two Way,"
+    CALCULATE(
+        SUM(ERR[KMS Travelled (MDT) Two Way]), 
+        CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal"")
+    )",
+380054,10,Neonatal IFT KMS Travelled (MDT) Two Way,"
+    CALCULATE(
+        [Neonatal KMS Travelled (MDT) Two Way],
+        ERR[Hospital To Hospital Transfer] = TRUE()
+    )",
+380057,10,Neonatal Non IFT KMS Travelled (MDT) Two Way,"
+    CALCULATE(
+        [Neonatal KMS Travelled (MDT) Two Way],
+        ERR[Hospital To Hospital Transfer] = FALSE()
+    )",
+385969,10,Non IFT Abandoned,"CALCULATE([Dispatches], ERR[GH Eligible] = ""No"", ERR[Hospital To Hospital Transfer] = FALSE())",0
+386223,10,Abandoned Cases (Before + After At Scene),"CALCULATE([Dispatches], ERR[GH Eligible] = ""No"")","#,0"
+386225,10,IFT Abandoned (Before + After At Scene),"CALCULATE([Abandoned Cases (Before + After At Scene)], ERR[Hospital To Hospital Transfer] = TRUE())","#,0"
+386227,10,Non IFT Abandoned (Before + After At Scene),"CALCULATE([Abandoned Cases (Before + After At Scene)], ERR[Hospital To Hospital Transfer] = FALSE())","#,0"
+386232,10,Neonatal Abandoned (Before + After At Scene),"
+    CALCULATE(
+        [Abandoned Cases (Before + After At Scene)],
+        CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal"")
+    )",0
+386352,10,Non Neonatal Abandoned (Before + After At Scene),"CALCULATE([Abandoned Cases (Before + After At Scene)], NOT CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal""))",0
+394885,10,Abandoned KMs (Before + After At Scene),"
+    CALCULATE(
+        SUM(ERR[KMS Travelled (MDT) Two Way]),
+        NOT ISBLANK(ERR[Assign Time]) && ERR[GH Eligible] = ""No""
+    )","#,0"
+394891,10,IFT Abandoned KMs (Before + After At Scene),"CALCULATE([Abandoned KMs (Before + After At Scene)], ERR[Hospital To Hospital Transfer] = TRUE())","#,0"
+394896,10,Non IFT Abandoned KMs (Before + After At Scene),"CALCULATE([Abandoned KMs (Before + After At Scene)], ERR[Hospital To Hospital Transfer] = FALSE())","#,0"
+394900,10,Neonatal Abandoned KMs (Before + After At Scene),"
+    CALCULATE(
+        [Abandoned KMs (Before + After At Scene)],
+        CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal"")
+    )","#,0"
+394914,10,Non Neonatal Abandoned KMs (Before + After At Scene),"CALCULATE([Abandoned KMs (Before + After At Scene)], NOT CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal""))",
+394980,10,Saved KMs by IFT Abandoned Cases,[IFT Abandoned (Before + After At Scene)] * [Avg KM/IFT Served MDT],"#,0"
+394985,10,Saved KMs by Non IFT Abandoned Cases,[Non IFT Abandoned (Before + After At Scene)] * [Avg KM/Non IFT Served MDT],"#,0"
+394988,10,Avg KM/Neonatal Served MDT,"DIVIDE([Neonatal KMS Travelled (MDT) Two Way], [Neonatal Served])",
+394991,10,Saved KMs by Neonatal Abandoned Cases,"CALCULATE([Saved KMs by IFT Abandoned Cases], CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal"")) + CALCULATE([Saved KMs by Non IFT Abandoned Cases], CONTAINSSTRING(ERR[Ambulance Base Location], ""neonatal""))","#,0"
+394995,10,Saved KMs Total,"ROUND([Saved KMs by IFT Abandoned Cases], 0) + ROUND([Saved KMs by Non IFT Abandoned Cases], 0)","#,0"
+403546,10,KMS Travelled (MDT) IFT in Lakhs Text,"
+VAR kms = [IFT KMS Travelled]
+VAR kms_in_lakhs = ROUND(kms/100000, 2)
+VAR kms_in_thousands = ROUND(kms/1000, 2)
+
+RETURN
+IF(
+    kms >= 100000, kms_in_lakhs & "" L"",
+    kms_in_thousands & "" K""
+)",
+403548,10,KMS Travelled (MDT) Non IFT in Lakhs Text,"
+VAR kms = [Non IFT KMS Travelled]
+VAR kms_in_lakhs = ROUND(kms/100000, 2)
+VAR kms_in_thousands = ROUND(kms/1000, 2)
+
+RETURN
+IF(
+    kms >= 100000, kms_in_lakhs & "" L"",
+    kms_in_thousands & "" K""
+)",
+435959,10,Avg KM/Vehicle/Day MDT,"
+    AVERAGEX(
+        FILTER(
+            SUMMARIZE(
+                ERR,
+                ERR[Vehicle Id],
+                ERR[Date],
+                ""DailyKMs"", SUM(ERR[KMS Travelled (MDT) Two Way])
+            ),
+            [DailyKMs] > 0
+        ),
+        [DailyKMs]
+    )","#,0"
+456268,10,ART Delay Cases %,"DIVIDE(SUM(ERR[ART Crossed due to Accepted Time >2min & On Action Time >2min Flag]), [ART Eligible (m)])",0.00%;-0.00%;0.00%
+456313,10,Temp Delay,[Avg Assign to Accepted (min)] + [Avg Accepted to On Action (min)],
+456348,10,ART Honored Label,"
+    SWITCH(
+        TRUE(),
+        SELECTEDVALUE(ERR[Locality (BL)]) = ""Urban"" && AVERAGE(ERR[ART mins.]) <= 18, ""Yes"",
+        SELECTEDVALUE(ERR[Locality (BL)]) = ""Rural"" && AVERAGE(ERR[ART mins.]) <= 23, ""Yes"",
+        SELECTEDVALUE(ERR[Locality (BL)]) = ""Tribal"" && AVERAGE(ERR[ART mins.]) <= 33, ""Yes"",
+        ""No""
+    )",
+456350,10,GH Achieved Label,"IF(AVERAGE(ERR[GH mins.]) <= 60, ""Yes"", ""No"")",
+515514,10,ART,"
+VAR AvgSeconds = CALCULATE(AVERAGE(ERR[ART secs.]), ERR[ART Eligible] = ""Yes"", ERR[ART secs.] > 0 && ERR[ART secs.] < 6000)
+VAR minutes = INT(AvgSeconds / 60)
+VAR seconds = MOD(INT(AvgSeconds), 60)
+
+RETURN
+    minutes + (seconds / 100)",
+515517,10,GH,"
+VAR AvgSeconds = CALCULATE(AVERAGE(ERR[GH secs.]), ERR[Hospital To Hospital Transfer] = FALSE(), ERR[GH Eligible] = ""Yes"", ERR[GH mins.] > 0, ERR[GH mins.] < 240)
+VAR minutes = INT(AvgSeconds / 60)
+VAR seconds = MOD(INT(AvgSeconds), 60)
+
+RETURN
+    minutes + (seconds / 100)",
+526043,10,Accept Time >2 min,"
+    CALCULATE(
+        DISTINCTCOUNT(ERR[Event Id]), 
+        ERR[Accept Time Bin] IN {""2-3 min"", ""3-4 min"", ""4-5 min"", "">5 min""}
+    )","#,0"
+526045,10,On Action Time >2 min,"
+    CALCULATE(
+        DISTINCTCOUNT(ERR[Event Id]),
+        ERR[On Action Time Bin] IN {""2-3 min"", ""3-4 min"", ""4-5 min"", "">5 min""}
+    )","#,0"
+526047,10,Enroute Time >10 min,"
+    CALCULATE(
+        DISTINCTCOUNT(ERR[Event Id]),
+        ERR[Hospital To Hospital Transfer] = FALSE(),
+        ERR[Enroute Time Bin] IN {""10-11 min"", ""11-12 min"", ""12-13 min"", ""13-14 min"", ""14-15 min"", "">15 min""}
+    )","#,0"
+536191,10,Accept Time >2 min %,"DIVIDE([Accept Time >2 min], [Accept Time Available Cases])",0.0%;-0.0%;0.0%
+536194,10,On Action Time >2 min %,"DIVIDE([On Action Time >2 min], [On Action Time Available Cases])",0.0%;-0.0%;0.0%
+536197,10,Enroute Time >10 min %,"DIVIDE([Enroute Time >10 min], [Enroute Time Available Cases (Non IFT)])",0.0%;-0.0%;0.0%
+536203,10,Total Time Delay Exceeded Cases,[Accept Time >2 min] + [On Action Time >2 min] + [Enroute Time >10 min],"#,0"
+551091,10,Enroute Time Available Cases (Non IFT),"CALCULATE([Dispatches], NOT ISBLANK(ERR[Enroute Time]), ERR[Hospital To Hospital Transfer] = FALSE())","#,0"
+619814,10,Complete ODO Stamps,"CALCULATE([Dispatches], ERR[MDT ODO Stamp Completeness] = ""Complete"")","#,0"
+619816,10,Incomplete ODO Stamps,"CALCULATE([Dispatches], ERR[MDT ODO Stamp Completeness] = ""Incomplete"")","#,0"
+619818,10,Complete ODO Stamps %,"DIVIDE([Complete ODO Stamps], [Dispatches])",0.0%;-0.0%;0.0%
+619821,10,Inomplete ODO Stamps %,"DIVIDE([Incomplete ODO Stamps], [Dispatches])",
+619824,10,Incomplete ODO Stamps %,"DIVIDE([Incomplete ODO Stamps], [Dispatches])",0.00%;-0.00%;0.00%
+630557,10,Avg Call to Assign (min),"
+VAR avg_sec = 
+    CALCULATE(
+        AVERAGEX(
+            ERR,
+            DATEDIFF(
+                ERR[Calltime],
+                ERR[Assign Time],
+                SECOND
+            )
+        ),
+        DATEDIFF(
+            ERR[Calltime],
+            ERR[Assign Time],
+            SECOND
+        ) > 0
+    )
+
+VAR minutes = INT(avg_sec / 60)
+VAR seconds = MOD(INT(avg_sec), 60)
+
+RETURN
+    minutes + (seconds / 100)",
+630568,10,Accident Cases Shifted,"CALCULATE([Total Cases Served], CONTAINSSTRING(ERR[SUB Event Marked By MDT], ""ROAD TRAFFIC""))","#,0"
+630570,10,Pregnancy Cases Shifted,"CALCULATE([Total Cases Served], CONTAINSSTRING(ERR[SUB Event Marked By MDT], ""PREGNANCY""))",0
+662836,10,Private Hospital Location (m),"
+    IF(
+        MAX(ERR[Drop Type Lookup]) = ""Pvt"",
+        CALCULATE(
+            MAX('Private Hospital Mapping'[Location]),
+            FILTER(
+                'Private Hospital Mapping',
+                'Private Hospital Mapping'[Hospital Name] = MAX(ERR[Drop Facility final])
+            )
+        ),
+        ""Govt""
+    )",
+684761,10,Accept Time Available Cases,"CALCULATE([Dispatches], NOT ISBLANK(ERR[Accepted Time]))","#,0"
+684764,10,On Action Time Available Cases,"CALCULATE([Dispatches], NOT ISBLANK(ERR[On Action Time]))","#,0"
+836530,10,Month Slicer Filter Active,"IF(ISFILTERED('Month Slicer'[Month & Year]), ""#EB99B7"", ""#EBEBEB"")",
+847849,10,Non IFT Case Requests,"COALESCE(CALCULATE(SUM(ERR[Actionable calls]), ERR[Hospital To Hospital Transfer]=FALSE()), 0)",0
+859699,10,KMS,SUM(ERR[KMS Travelled (MDT) Two Way]),
+948,13,Date selection,"""Period:  ""&FORMAT(MINX('Calender','Calender'[Date]),""DD-MMM-YY"")&""  to  ""&FORMAT(MAXX('Calender','Calender'[Date]),""DD-MMM-YY"")",
+950,13,Max & Min Date,"FORMAT(MIN('Calender'[Date]), ""dd-mmm-yyyy"") & "" - "" & FORMAT(MAX(Calender[Date]), ""dd-mmm-yyyy"")",
+951,13,Max Date,"
+CALCULATE(
+    MAX(Calender[Formatted Date 2]),
+    FILTER(
+        ALL('Calender'),
+        'Calender'[Date] = MAX(Calender[Date])
+    )
+)",dd mmmm yyyy
+952,16,Last Refresh (IST),"
+""Last refresh : "" &
+FORMAT(
+    MAX(Refresh_Time[Refresh_IST]),
+    ""dd MMM yyyy, hh:mm AM/PM""
+)",
+953,25,Vehicle Days in Selected Month,"
+CALCULATE(
+    DISTINCTCOUNT(ERR[Date]), 
+    ALLEXCEPT('Calender', 'Calender'[Month]), 
+    REMOVEFILTERS('Vehicles Master Database'[Vehicle Number]),
+    REMOVEFILTERS('Vehicles Master Database'[Base Location]),
+    REMOVEFILTERS('Districts & Regions'[District])
+)",0
+954,25,Vehicle Uptime Days (This Month),"
+    CALCULATE(
+        DISTINCTCOUNT(ERR[Date]),
+        ERR[Assigned Flag] = 1
+    )",0
+955,25,Vehicle Uptime Title,"""Vehicle Uptime - "" & SELECTEDVALUE('Calender'[Month])",
+956,25,Vehicle Uptime %,"
+VAR vehicles = 
+    CALCULATETABLE(
+        FILTER(
+            VALUES('Vehicles Master Database'[Vehicle Number]), 
+            [Vehicle Uptime Days (This Month)] > 0
+        ),
+        'Vehicles Master Database'[Base Location] <> ""Backup"",
+        'Vehicles Master Database'[Base Location] <> BLANK()
+    )
+
+RETURN 
+CALCULATE(DIVIDE(
+    CALCULATE(
+        SUMX(VALUES('Vehicles Master Database'[Vehicle Number]), [Vehicle Uptime Days (This Month)]),
+        vehicles
+    ),
+    [Total Days of all Vehicles in this month]
+), USERELATIONSHIP('Vehicles Master Database'[Base Location], Segments[Base Location]))",0.00%;-0.00%;0.00%
+957,25,Total Days of all Vehicles in this month,"
+CALCULATE(
+    DISTINCTCOUNT('Vehicles Master Database'[Vehicle Number]),
+    'Vehicles Master Database'[Base Location] <> ""Backup"",
+    'Vehicles Master Database'[Base Location] <> BLANK()
+)    
+* 
+CALCULATE(
+    COUNTROWS('Calender'), 
+    'Calender'[Month] = SELECTEDVALUE('Calender'[Month])
+)",0
+958,25,Off Road Reason (m),"
+VAR reason = MAX('Off Road'[Off Road Reason])
+
+RETURN
+    IF(
+        ISBLANK(reason), ""No Cases"",
+        ""Off Road""
+    )",
+959,25,Off Road Vehicles,"
+VAR vehicles =
+    FILTER(
+        'Vehicles Master Database',
+        [Vehicle Uptime Days (This Month)] = 0
+            && [Off Road Reason (m)] = ""Off Road""
+            && 'Vehicles Master Database'[Base Location] <> ""Backup""
+            && 'Vehicles Master Database'[Base Location] <> ""null""
+    )
+
+RETURN
+    COALESCE(COUNTROWS(vehicles), 0)",0
+960,25,No Cases Vehicles,"
+VAR _selectedDistricts = ALLSELECTED('Districts & Regions'[District])
+VAR _selectedLocations = ALLSELECTED(Segments[Base Location])
+
+VAR vehicles =
+    FILTER(
+        'Vehicles Master Database',
+        [Vehicle Uptime Days (This Month)] = 0
+            && [Off Road Reason (m)] = ""No Cases""
+            && 'Vehicles Master Database'[Base Location] <> ""Backup""
+            && 'Vehicles Master Database'[Base Location] <> ""null""
+            && 'Vehicles Master Database'[District Name] IN _selectedDistricts
+            && 'Vehicles Master Database'[Base Location] IN _selectedLocations
+    )
+
+RETURN
+    COALESCE(COUNTROWS(vehicles), 0)",0
+961,25,0% Uptime Vehicles,"
+VAR _selectedDistricts = ALLSELECTED('Districts & Regions'[District])
+VAR _selectedLocations = ALLSELECTED(Segments[Base Location])
+
+VAR vehicles =
+    FILTER(
+        'Vehicles Master Database',
+        [Vehicle Uptime Days (This Month)] = 0
+            && 'Vehicles Master Database'[Base Location] <> ""Backup""
+            && 'Vehicles Master Database'[Base Location] <> ""null""
+            && 'Vehicles Master Database'[District Name] IN _selectedDistricts
+            && 'Vehicles Master Database'[Base Location] IN _selectedLocations
+    )
+
+RETURN
+    COALESCE(COUNTROWS(vehicles), 0)",0
+962,25,District Match (DistrictRegions & Vehicle Master),"
+IF(
+    SELECTEDVALUE('Vehicles Master Database'[District Name]) IN ALLSELECTED('Districts & Regions'[District]) &&
+    SELECTEDVALUE('Vehicles Master Database'[Region]) IN ALLSELECTED('Districts & Regions'[Region]), 1, 0
+)",0
+963,25,Total Vehicles,"
+COALESCE(CALCULATE(
+    CALCULATE(DISTINCTCOUNT('Vehicles Master Database'[Vehicle Number]), 'Vehicles Master Database'[Regular/Backup] = ""Regular""), 
+    USERELATIONSHIP('Vehicles Master Database'[District Name], 'Districts & Regions'[District]),
+    USERELATIONSHIP('Vehicles Master Database'[Base Location], Segments[Base Location])
+), 0)",0
+964,25,Segment Match (Segment & Vehicle Master),"
+IF(
+    SELECTEDVALUE('Vehicles Master Database'[Base Location]) IN ALLSELECTED(Segments[Base Location]), 1, 0
+)",0
+965,25,Segment Lookup,"
+CALCULATE(
+    MIN(Segments[Base Location]),
+    FILTER(
+        Segments,
+        Segments[Base Location] = MIN('Vehicles Master Database'[Base Location])
+    )
+)",
+966,25,Vehicle Uptime,"
+    DIVIDE(
+        [Vehicle Uptime Days (This Month)],
+        CALCULATE(
+            COUNTROWS('Calender'),
+            'Calender'[Month] = SELECTEDVALUE('Calender'[Month])
+        )
+    )",0%;-0%;0%
+967,31,MDT Opening ODO (m),"
+VAR odo = 
+    ADDCOLUMNS(
+        VALUES('ODO Reading MDT'[VEHICLE_ID]), 
+        ""ODO"", MIN('ODO Reading MDT'[MIN ODO]), 
+        ""Date"", MIN('ODO Reading MDT'[Date])
+    ) 
+
+RETURN 
+    CALCULATE(
+        MIN('ODO Reading MDT'[MIN ODO]),
+        odo, 
+        'Calender'[Date] = MIN('ODO Reading MDT'[Date])
+    )","#,0"
+968,31,MDT Closing ODO (m),"
+VAR odo = 
+    ADDCOLUMNS(
+        VALUES('ODO Reading MDT'[VEHICLE_ID]), 
+        ""ODO"", MAX('ODO Reading MDT'[MAX ODO]), 
+        ""Date"", MAX('ODO Reading MDT'[Date])
+    ) 
+
+RETURN 
+    CALCULATE(
+        MAX('ODO Reading MDT'[MAX ODO]), 
+        odo, 
+        'Calender'[Date] = MAX('ODO Reading MDT'[Date])
+    )","#,0"
+969,31,ODO Diff (m),[MDT Closing ODO (m)] - [MDT Opening ODO (m)],"#,0"
+970,31,MDT ODO Diff,[MDT Closing ODO (m)] - [MDT Opening ODO (m)],"#,0"
+971,34,Off Road Count,"COALESCE(DISTINCTCOUNT('Off Road'[Vehicle Id]), 0)",0
+972,34,Off Road Latest Date,"""**Note: Off Road Data Available till - "" & FORMAT(MAX('ERR'[Date]), ""MMM DD, YYYY"")",
+1046,52,Total KMS,SUM('Fuel Filling'[KMS running]),0
+133646,52,Fuel Amount in Lakhs Text,"
+VAR amount = SUM('Fuel Filling'[Fuel Amount])
+VAR amount_in_lakhs = ROUND(amount/100000, 2)
+VAR amount_in_thousands = ROUND(amount/1000, 2)
+
+RETURN
+IF(
+    amount >= 100000, amount_in_lakhs & "" L"",
+    amount_in_thousands & "" K""
+)",
+1047,55,Segments Uptime,"
+    DIVIDE(
+        [No. of Days Served in this Month], 
+        CALCULATE(
+            COUNTROWS('Calender'),
+            'Calender'[Month] = SELECTEDVALUE('Calender'[Month])
+        )
+    )",0%;-0%;0%
+1048,55,Days in Selected Month,DISTINCTCOUNT(ERR[Date]),0
+1049,55,No. of Days Served in this Month,"
+    CALCULATE(
+        DISTINCTCOUNT(ERR[Date]),
+        ERR[Assigned Flag] = 1
+    )",0
+1050,55,Segment Uptime Days (This Month),"
+VAR days = CALCULATE(
+    DISTINCTCOUNT(ERR[Date]),
+    ERR[Assigned Flag] = 1
+)
+
+RETURN
+IF(days > 0, days, 0)",0
+1051,55,Segments Uptime %,"
+VAR segment = 
+    FILTER(
+        VALUES(Segments[Base Location]), 
+        [Segment Uptime Days (This Month)] > 0
+    )
+
+RETURN 
+DIVIDE(
+    CALCULATE(
+        SUMX(VALUES(Segments[Base Location]), [Segment Uptime Days (This Month)]),
+        segment
+    ),
+    [Total Days of all Segments in this month]
+)",0.00%;-0.00%;0.00%
+1052,55,Segments Uptime Title,"""Segments Uptime - "" & SELECTEDVALUE('Calender'[Month])",
+1053,55,Segments with 0% Uptime,"
+VAR AllBases = 
+    CALCULATETABLE(
+        FILTER(
+            VALUES(Segments[Base location]),
+            NOT ISBLANK(Segments[Base location])
+        ),
+        USERELATIONSHIP(
+            Segments[District Name],
+            'Districts & Regions'[District]
+        )
+    )
+
+VAR PresentBases = 
+    CALCULATETABLE(
+        VALUES(ERR[Ambulance Base location]),
+        ERR[Date] IN VALUES('Calender'[Date]),
+        NOT ISBLANK(ERR[Ambulance Base location])
+    )
+
+VAR Missing = 
+    EXCEPT(AllBases, PresentBases)
+
+VAR MissingWithDistrict =
+    ADDCOLUMNS(
+        Missing,
+        ""District"", 
+        CALCULATE(
+            SELECTEDVALUE(Segments[District Name]),
+            USERELATIONSHIP(
+                Segments[District Name],
+                'Districts & Regions'[District]
+            )
+        )
+    )
+
+VAR NumberedMissing =
+    ADDCOLUMNS(
+        MissingWithDistrict,
+        ""Serial"", 
+        RANKX(
+            MissingWithDistrict, 
+            Segments[Base location], 
+            , 
+            ASC, 
+            DENSE
+        )
+    )
+
+RETURN
+    CONCATENATEX(
+        NumberedMissing,
+        [Serial] & "". "" & Segments[Base location] & "" - "" & [District],
+        UNICHAR(10),
+        [Serial], ASC
+    )",
+1054,55,Segments with 0% Uptime count,"
+VAR AllBases = 
+    CALCULATETABLE(
+        FILTER(
+            VALUES(Segments[Base location]),
+            NOT ISBLANK(Segments[Base location])
+        ),
+        USERELATIONSHIP(
+            Segments[District Name],
+            'Districts & Regions'[District]
+        )
+    )
+
+VAR PresentBases = 
+    CALCULATETABLE(
+        VALUES(ERR[Ambulance Base location]),
+        ERR[Date] IN VALUES('Calender'[Date]),
+        NOT ISBLANK(ERR[Ambulance Base location])
+    )
+
+VAR Missing = 
+    EXCEPT(AllBases, PresentBases)
+
+VAR MissingWithDistrict =
+    ADDCOLUMNS(
+        Missing,
+        ""District"", 
+        CALCULATE(
+            SELECTEDVALUE(Segments[District Name]),
+            USERELATIONSHIP(
+                Segments[District Name],
+                'Districts & Regions'[District]
+            )
+        )
+    )
+
+VAR NumberedMissing =
+    ADDCOLUMNS(
+        MissingWithDistrict,
+        ""Serial"", 
+        RANKX(
+            MissingWithDistrict, 
+            Segments[Base location], 
+            , 
+            ASC, 
+            DENSE
+        )
+    )
+
+RETURN
+    COALESCE(COUNTROWS(NumberedMissing), 0)",
+1055,55,Segments with 100% Uptime,"
+VAR TotalDaysInMonth = [Days in Selected Month]
+
+VAR Days_Served =
+CALCULATE(
+    DISTINCTCOUNT(ERR[Ambulance Base Location]),
+    FILTER(
+        VALUES(ERR[Ambulance Base Location]),
+        CALCULATE(
+            DISTINCTCOUNT(ERR[Date]),
+            ERR[Assigned Flag] = 1
+        ) = TotalDaysInMonth
+    )
+)
+
+RETURN 
+    IF(ISBLANK(Days_Served), 0, Days_Served)",0
+1056,55,Segments with 100% Uptime %,"
+DIVIDE([Segments with 100% Uptime], 731)",0.00%;-0.00%;0.00%
+1057,55,Selected Date,"""Segments with 1 Case Served - "" & FORMAT(SELECTEDVALUE('Calender'[Date]), ""MMM DD, YYYY"")",
+1058,55,Total Days of all Segments in this month,"
+CALCULATE(
+    DISTINCTCOUNT('Segments'[Base Location]),
+    'Segments'[Base Location] <> ""Backup"",
+    'Segments'[Base Location] <> BLANK()
+)
+* 
+CALCULATE(
+    COUNTROWS('Calender'),
+    'Calender'[Month] = SELECTEDVALUE('Calender'[Month])
+)",0
+1059,55,Segments with 0% Uptime %,"
+DIVIDE([Segment Served Flag KPI], 731)",0.00%;-0.00%;0.00%
+1060,55,District Match (CallBL & DistrictRegions),"
+VAR segments =
+    CALCULATETABLE(
+        VALUES(Segments[Base Location]),
+        Segments[District Name] IN CALCULATETABLE(ALLSELECTED('Districts & Regions'[District]), ALL(ERR))
+    )
+RETURN
+    IF(
+        MAX(ERR[Caller Base Location]) IN segments, 1, 0
+    )",0
+1061,55,Is Not Reported,"
+VAR Reported =
+    CALCULATE(
+        COUNTROWS(ERR), ERR[Ambulance Base Location] = SELECTEDVALUE(Segments[Base Location])
+    )
+RETURN
+IF(Reported = 0, 1, 0)",0
+1062,55,Selected District,"IF(SELECTEDVALUE(Segments[District Name]) IN ALLSELECTED('Districts & Regions'[District]), 1, 0)",0
+1063,55,Neonatal Segments Uptime,"
+VAR segment = 
+    FILTER(
+        CALCULATETABLE(VALUES(Segments[Base Location]), CONTAINSSTRING(LOWER(Segments[Base Location]),""neonatal"")), 
+        [Segment Uptime Days (This Month)] > 0
+    )
+
+RETURN 
+DIVIDE(
+    CALCULATE(
+        SUMX(CALCULATETABLE(VALUES(Segments[Base Location]), CONTAINSSTRING(LOWER(Segments[Base Location]),""neonatal"")), [Segment Uptime Days (This Month)]),
+        segment
+    ),
+    CALCULATE([Total Days of Neonatal Segments in this month], USERELATIONSHIP(Segments[District Name], 'Districts & Regions'[District]))
+)",0.00%;-0.00%;0.00%
+1064,55,Total Days of Neonatal Segments in this month,"
+CALCULATE(
+    DISTINCTCOUNT('Segments'[Base Location]),
+    CONTAINSSTRING(Segments[Base Location], ""neonatal"")
+)
+* 
+CALCULATE(
+    COUNTROWS('Calender'), 
+    'Calender'[Month] = SELECTEDVALUE('Calender'[Month])
+)",0
+1065,55,Neonatal Segments,"
+COALESCE(CALCULATE(
+    CALCULATE(DISTINCTCOUNT(Segments[Base Location]), CONTAINSSTRING(Segments[Base Location], ""neonatal"")), 
+    USERELATIONSHIP(Segments[District Name], 'Districts & Regions'[District])
+), 0)",0
+1066,55,Neonatal Segment %,"DIVIDE([Neonatal Segments], [Total Segments])",0.00%;-0.00%;0.00%
+1067,55,Total Segments,"
+COALESCE(CALCULATE(
+    DISTINCTCOUNT(Segments[Base Location]), 
+    USERELATIONSHIP(Segments[District Name], 'Districts & Regions'[District])
+), 0)",0
+743535,55,Segment Served Flag,"
+VAR MinDate = MIN(Calender[Date])
+VAR MaxDate = MAX(Calender[Date])
+VAR SelectedBase = SELECTEDVALUE(Segments[Base Location])
+VAR ServedCount =
+    CALCULATE(
+        COUNTROWS(ERR),
+        REMOVEFILTERS(Calender),
+        REMOVEFILTERS('Vehicles Master Database'[Special Base Locations Flag]),
+        ERR[Date] >= MinDate,
+        ERR[Date] < MaxDate + 1,
+        ERR[Ambulance Base Location] = SelectedBase
+    )
+RETURN
+    IF(
+        NOT ISBLANK(SelectedBase) && ServedCount > 0,
+        1,
+        0
+    )",0
+743538,55,Segment Served Flag KPI,"
+SUMX(
+    CALCULATETABLE(
+        VALUES(Segments[Base Location]),
+        REMOVEFILTERS(Segments[Base Location])
+    ),
+    VAR SelectedBase = Segments[Base Location]
+    VAR MinDate = MIN(Calender[Date])
+    VAR MaxDate = MAX(Calender[Date])
+    VAR ServedCount =
+        CALCULATE(
+            COUNTROWS(ERR),
+            REMOVEFILTERS(Calender),
+            REMOVEFILTERS('Vehicles Master Database'[Special Base Locations Flag]),
+            ERR[Date] >= MinDate,
+            ERR[Date] <= MaxDate,
+            ERR[Ambulance Base Location] = SelectedBase
+        )
+    RETURN
+        IF(ServedCount = 0, 1, 0)
+)",0
+1068,61,GH Segments in Bin,"
+
+VAR SegmentsTable =
+    ADDCOLUMNS(
+        SUMMARIZE(
+            ERR,
+            ERR[Ambulance Base Location]
+        ),
+        ""GH_Percent"",
+            CALCULATE(
+                DIVIDE(
+                    [GH Ontime],
+                    SUM(ERR[Actionable calls])
+                ),
+                ERR[GH Eligible] = ""Yes"",
+                ERR[Hospital To Hospital Transfer] = FALSE()
+            )
+    )
+
+VAR CurrentMin = MIN ('GH Bins'[Min])
+VAR CurrentMax = MAX ('GH Bins'[Max])
+
+RETURN
+COUNTROWS(
+    FILTER(
+        SegmentsTable,
+        [GH_Percent] >= CurrentMin
+            && [GH_Percent] < CurrentMax
+    )
+)",0
+1069,64,Diff Manual,MAX('ODO Reading Manual'[Closing ODO]) - MIN('ODO Reading Manual'[Opening ODO]),"#,0"
+1071,64,KMs travelled current month,"
+VAR SelectedDate =
+    MAX ( Calender[Date] )
+
+VAR StartDate =
+    DATE ( YEAR ( SelectedDate ), MONTH ( SelectedDate ), 1 )
+
+VAR EndDate =
+    EOMONTH ( SelectedDate, 0 )
+
+RETURN
+CALCULATE (
+    SUM('ODO Reading Manual'[KMS]),
+    DATESBETWEEN ( Calender[Date], StartDate, EndDate )
+)",
+1072,64,KMs travelled diff CM  vs PM,[KMs travelled current month]-[KMs travelled Previous Month],
+1073,64,KMs travelled Previous Month,"
+VAR SelectedDate =
+    MAX ( Calender[Date] )
+
+VAR PrevMonthStart =
+    DATE (
+        YEAR ( EOMONTH ( SelectedDate, -1 ) ),
+        MONTH ( EOMONTH ( SelectedDate, -1 ) ),
+        1
+    )
+
+VAR PrevMonthEnd =
+    EOMONTH ( SelectedDate, -1 )
+
+RETURN
+CALCULATE (
+    SUM('ODO Reading Manual'[KMS]),
+    DATESBETWEEN ( Calender[Date], PrevMonthStart, PrevMonthEnd )
+)",
+1074,64,Vehicle working days,"CALCULATE(count('ODO Reading Manual'[Vehicle no.]),'ODO Reading Manual'[KMS]>0)",0
+1075,64,Vehicles in Use/KMS Run,"CALCULATE(DISTINCTCOUNT('ODO Reading Manual'[Vehicle no.]), 'ODO Reading Manual'[KMS] > 0)",0
+296970,64,Avg KM/Vehicle/Day Manual,"
+    CALCULATE(
+        DIVIDE(
+            SUM('ODO Reading Manual'[KMS]),
+            COUNT('ODO Reading Manual'[Date])
+        ),
+        'ODO Reading Manual'[KMS] > 0
+    )",0
+339540,64,Avg KM/District Manual,"
+CALCULATE(
+    DIVIDE(
+        SUM('ODO Reading Manual'[KMS]),
+        DISTINCTCOUNT('ODO Reading Manual'[District])
+    ),
+    'ODO Reading Manual'[KMS] > 0
+)","#,0"
+1076,73,Manual & MDT KMS Diff,SUM('Combined ODO'[Manual KMS]) - SUM('Combined ODO'[MDT KMS]),"#,0"
+1077,73,Manual & MDT Diff Match,"IF(ABS(SUM('Combined ODO'[Manual KMS]) - SUM('Combined ODO'[MDT KMS])) < 50, ""Matching"", ""Not Matching"")",
+1079,73,MDT O-O vs Manual KMS Diff,"
+VAR diff = SUM('Combined ODO'[Manual KMS]) - SUM('Combined ODO'[MDT O-O KMS])
+
+RETURN
+IF(NOT ISBLANK(SUM('Combined ODO'[Manual KMS])) && NOT ISBLANK(SUM('Combined ODO'[MDT O-O KMS])), diff)","#,0"
+1080,73,MDT Manual Difference %,"DIVIDE([Manual & MDT KMS Diff], SUM('Combined ODO'[Manual KMS]))",0.0%;-0.0%;0.0%
+1081,73,Actual vs Logbook KMS,SUM(ERR[KMS Travelled (MDT) Two Way]) - SUM('Combined ODO'[Manual KMS]),"#,0"
+1082,73,Actual vs Logbook KMS %,"ABS(DIVIDE([Actual vs Logbook KMS], SUM('Combined ODO'[Manual KMS])))",0%;-0%;0%
+72732,73,MDT Vehicles in Use/KMS Run,"CALCULATE(DISTINCTCOUNT('Combined ODO'[Vehicle ID]), 'Combined ODO'[MDT KMS] > 0)",0
+72734,73,Avg KM/Vehicle/Day MDT (Combined ODO),"
+    CALCULATE(
+        DIVIDE(
+            SUM('Combined ODO'[MDT KMS]),
+            COUNT('Combined ODO'[Date])
+        ),
+        'Combined ODO'[MDT KMS] > 0
+    )",
+133644,73,KMS Travelled (Manual) in Lakhs Text,"
+VAR kms = SUM('Combined ODO'[Manual KMS])
+VAR kms_in_lakhs = ROUND(kms/100000, 2)
+VAR kms_in_thousands = ROUND(kms/1000, 2)
+
+RETURN
+IF(
+    kms >= 100000, kms_in_lakhs & "" L"",
+    kms_in_thousands & "" K""
+)",
+368855,73,Vehicles Travelled >500 KMs in a Day,"CALCULATE(COUNT('Combined ODO'[Vehicle ID]), 'Combined ODO'[MDT KMS] > 500)","#,0"
+721343,719304,Available Cases Dynamic,"
+VAR SelectedType =
+    SELECTEDVALUE(
+        'Delay Type Slicer'[Delay Type],
+        ""Accept Time""
+    )
+    
+RETURN
+    SWITCH(
+        SelectedType,
+        ""Accept Time"",
+            [Accept Time Available Cases],
+        ""On Action Time"",
+            [On Action Time Available Cases]
+    )",0
+721345,719304,Deviated Cases Dynamic,"
+VAR SelectedType =
+    SELECTEDVALUE(
+        'Delay Type Slicer'[Delay Type],
+        ""Accept Time""
+    )
+
+VAR ThresholdSeconds =
+    SELECTEDVALUE(
+        'Accept Time Threshold'[Threshold Minutes],
+        2
+    ) * 60
+
+RETURN
+    SWITCH(
+        SelectedType,
+        ""Accept Time"",
+            CALCULATE(
+                DISTINCTCOUNT(ERR[Event Id]),
+                ERR[Ambulance Assigned] = 1,
+                FILTER(
+                    ERR,
+                    NOT ISBLANK(ERR[Assign Time])
+                        && NOT ISBLANK(ERR[Accepted Time])
+                        && DATEDIFF(
+                            ERR[Assign Time],
+                            ERR[Accepted Time],
+                            SECOND
+                        ) > ThresholdSeconds
+                )
+            ),
+        ""On Action Time"",
+            CALCULATE(
+                DISTINCTCOUNT(ERR[Event Id]),
+                ERR[Ambulance Assigned] = 1,
+                FILTER(
+                    ERR,
+                    NOT ISBLANK(ERR[Accepted Time])
+                        && NOT ISBLANK(ERR[On Action Time])
+                        && DATEDIFF(
+                            ERR[Accepted Time],
+                            ERR[On Action Time],
+                            SECOND
+                        ) > ThresholdSeconds
+                )
+            )
+    )",0
+721347,719304,Deviation % Dynamic,"
+DIVIDE(
+    [Deviated Cases Dynamic],
+    [Available Cases Dynamic],
+    0
+)",0.0%;-0.0%;0.0%
+721358,719304,EMT Deviation Filter,"
+VAR SelectedDeviation =
+    DIVIDE(
+        SELECTEDVALUE(
+            'Deviation % Slicer'[Deviation %],
+            20
+        ),
+        100
+    )
+
+VAR CurrentDeviation =
+    [Deviation % Dynamic]
+
+VAR HasCasesSelection =
+    ISFILTERED(
+        'Deviated Cases Slicer'[Deviated Cases Range]
+    )
+
+VAR SelectedCases =
+    SELECTEDVALUE(
+        'Deviated Cases Slicer'[Deviated Cases Threshold]
+    )
+
+VAR CurrentDeviatedCases =
+    [Deviated Cases Dynamic]
+
+RETURN
+    IF(
+        CurrentDeviation > SelectedDeviation
+            && (
+                NOT HasCasesSelection
+                    || CurrentDeviatedCases > SelectedCases
+            ),
+        1,
+        0
+    )",0
+721364,719304,ART Crossed Dynamic,"
+VAR SelectedType =
+    SELECTEDVALUE(
+        'Delay Type Slicer'[Delay Type],
+        ""Accept Time""
+    )
+    
+RETURN
+    SWITCH(
+        SelectedType,
+        ""Accept Time"",
+            SUM(ERR[ART Crossed due to Accepted Time >2 min Flag]),
+        ""On Action Time"",
+            SUM(ERR[ART Crossed due to On Action Time >2 min Flag])
+    )",0
+721366,719304,GH Crossed Dynamic,"
+VAR SelectedType =
+    SELECTEDVALUE(
+        'Delay Type Slicer'[Delay Type],
+        ""Accept Time""
+    )
+    
+RETURN
+    SWITCH(
+        SelectedType,
+        ""Accept Time"",
+            SUM(ERR[GH Crossed due to Accepted Time >2 min Flag]),
+        ""On Action Time"",
+            SUM(ERR[GH Crossed due to On Action Time >2 min Flag])
+    )",0
+721374,721261,Selected Delay Type,"SELECTEDVALUE('Delay Type Slicer'[Delay Type]) & "" - Deviation""",
+721376,721261,Selected Delay Type - Employee wise,"""Employee wise - "" & SELECTEDVALUE('Delay Type Slicer'[Delay Type]) & "" Deviation""",
+743648,743541,Abandoned Count,"
+VAR SelectedType =
+    SELECTEDVALUE('Abandoned Summary'[Abandoned Type], ""Total"")
+
+RETURN
+SWITCH(
+    SelectedType,
+
+    ""Total"",
+        [Abandoned Cases (Before + After At Scene)],
+
+    ""IFT"",
+        [IFT Abandoned (Before + After At Scene)],
+
+    ""Non IFT"",
+        [Non IFT Abandoned (Before + After At Scene)],
+
+    ""Neonatal"",
+        [Neonatal Abandoned (Before + After At Scene)]
+)",0
+743650,743541,Abandoned KMs,"
+VAR SelectedType =
+    SELECTEDVALUE('Abandoned Summary'[Abandoned Type], ""Total"")
+
+RETURN
+SWITCH(
+    SelectedType,
+
+    ""Total"",
+        [Abandoned KMs (Before + After At Scene)],
+
+    ""IFT"",
+        [IFT Abandoned KMs (Before + After At Scene)],
+
+    ""Non IFT"",
+        [Non IFT Abandoned KMs (Before + After At Scene)],
+
+    ""Neonatal"",
+        [Neonatal Abandoned KMs (Before + After At Scene)]
+)",
+743653,743541,Saved KMs by Abandoned Cases,"
+VAR SelectedType =
+    SELECTEDVALUE('Abandoned Summary'[Abandoned Type], ""Total"")
+
+RETURN
+SWITCH(
+    SelectedType,
+
+    ""Total"",
+        [Saved KMs Total],
+
+    ""IFT"",
+        [Saved KMs by IFT Abandoned Cases],
+
+    ""Non IFT"",
+        [Saved KMs by Non IFT Abandoned Cases],
+
+    ""Neonatal"",
+        [Saved KMs by Neonatal Abandoned Cases]
+)",
+743656,743541,Selected Abandoned Type,"IF(ISFILTERED('Abandoned Summary'[Abandoned Type]), ""- "" & SELECTEDVALUE('Abandoned Summary'[Abandoned Type]), ""- Total"")",
