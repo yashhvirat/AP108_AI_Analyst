@@ -4,24 +4,16 @@ import requests
 import msal
 import pandas as pd
 
-# =====================================================
-# POWER BI CONFIGURATION
-# =====================================================
-
-TENANT_ID = "36627a7a-9acb-42a2-a6f9-a65cc894def7"
-CLIENT_ID = "f60b754c-c95f-4bb7-87b2-12e8d5d131db"
-
-WORKSPACE_ID = "1531ea24-0b16-452f-8ef1-a5c518c1ac10"
-DATASET_ID = "31841f98-7507-4f21-8c1d-28415421cbc6"
-
-# =====================================================
-# POWER BI CONFIGURATION
-# =====================================================
+TENANT_ID = os.environ["POWERBI_TENANT_ID"]
+CLIENT_ID = os.environ["POWERBI_CLIENT_ID"]
+CLIENT_SECRET = os.environ["POWERBI_CLIENT_SECRET"]
+WORKSPACE_ID = os.environ["POWERBI_WORKSPACE_ID"]
+DATASET_ID = os.environ["POWERBI_DATASET_ID"]
 
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 
 SCOPES = [
-    "https://analysis.windows.net/powerbi/api/Dataset.Read.All"
+    "https://analysis.windows.net/powerbi/api/.default"
 ]
 
 EXECUTE_URL = (
@@ -29,39 +21,19 @@ EXECUTE_URL = (
     f"{WORKSPACE_ID}/datasets/{DATASET_ID}/executeQueries"
 )
 
-# =====================================================
-# AUTHENTICATION
-# =====================================================
+_msal_app = msal.ConfidentialClientApplication(
+    CLIENT_ID,
+    authority=AUTHORITY,
+    client_credential=CLIENT_SECRET
+)
 
-_msal_app = None
 _access_token = None
 
 
 def get_access_token():
+    global _access_token
 
-    global _msal_app, _access_token
-
-    if _msal_app is None:
-        _msal_app = msal.PublicClientApplication(
-            CLIENT_ID,
-            authority=AUTHORITY
-        )
-
-    # Try silent authentication first
-    accounts = _msal_app.get_accounts()
-
-    if accounts:
-        result = _msal_app.acquire_token_silent(
-            SCOPES,
-            account=accounts[0]
-        )
-
-        if result and "access_token" in result:
-            _access_token = result["access_token"]
-            return _access_token
-
-    # Interactive login if no valid cached token exists
-    result = _msal_app.acquire_token_interactive(
+    result = _msal_app.acquire_token_for_client(
         scopes=SCOPES
     )
 
@@ -72,17 +44,10 @@ def get_access_token():
         )
 
     _access_token = result["access_token"]
-
     return _access_token
 
 
-# =====================================================
-# EXECUTE DAX
-# =====================================================
-
 def execute_dax(query):
-
-    global _access_token
 
     if not query or not query.strip():
         raise ValueError("DAX query cannot be empty.")
@@ -95,14 +60,8 @@ def execute_dax(query):
     }
 
     payload = {
-        "queries": [
-            {
-                "query": query
-            }
-        ],
-        "serializerSettings": {
-            "includeNulls": True
-        }
+        "queries": [{"query": query}],
+        "serializerSettings": {"includeNulls": True}
     }
 
     response = requests.post(
@@ -112,12 +71,8 @@ def execute_dax(query):
         timeout=120
     )
 
-    # Retry once if the token has expired or been rejected
     if response.status_code == 401:
-
-        _access_token = None
         token = get_access_token()
-
         headers["Authorization"] = f"Bearer {token}"
 
         response = requests.post(
@@ -129,15 +84,14 @@ def execute_dax(query):
 
     if not response.ok:
         raise Exception(
-            f"Power BI API Error: {response.status_code}\n"
-            f"{response.text}"
+            f"Power BI API Error: "
+            f"{response.status_code}\n{response.text}"
         )
 
     data = response.json()
 
     try:
         rows = data["results"][0]["tables"][0]["rows"]
-
         return pd.DataFrame(rows)
 
     except (KeyError, IndexError, TypeError) as e:
