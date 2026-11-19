@@ -1,116 +1,108 @@
-import clr
-from pathlib import Path
-import pandas as pd
-
-# 1. Load ADOMD.NET assembly FIRST
-DLL_PATH = Path(
-    r"C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.AnalysisServices.AdomdClient\v4.0_15.0.0.0__89845dcd8080cc91\Microsoft.AnalysisServices.AdomdClient.dll"
-)
-
-if not DLL_PATH.exists():
-    raise FileNotFoundError(f"ADOMD.NET DLL not found: {DLL_PATH}")
-
-clr.AddReference(str(DLL_PATH))
-
-# 2. Import Pyadomd only after loading the assembly
-from pyadomd import Pyadomd
-
-PORT = "55189"
-
-CONNECTION_STRING = (
-    f"Provider=MSOLAP;"
-    f"Data Source=localhost:{PORT};"
-)
+import io
+import streamlit as st
+import msal
+import requests
+import pyarrow as pa
 
 
-def execute_dmv(query):
+def get_metadata_token():
 
-    with Pyadomd(CONNECTION_STRING) as conn:
-        with conn.cursor().execute(query) as cursor:
+    tenant_id = st.secrets["POWERBI_TENANT_ID"]
+    client_id = st.secrets["POWERBI_CLIENT_ID"]
+    client_secret = st.secrets["POWERBI_CLIENT_SECRET"]
 
-            columns = [col[0] for col in cursor.description]
-            rows = cursor.fetchall()
+    app = msal.ConfidentialClientApplication(
+        client_id,
+        authority=f"https://login.microsoftonline.com/{tenant_id}",
+        client_credential=client_secret
+    )
 
-    return pd.DataFrame(rows, columns=columns)
+    result = app.acquire_token_for_client(
+        scopes=["https://analysis.windows.net/powerbi/api/.default"]
+    )
+
+    if "access_token" not in result:
+        raise Exception(
+            result.get("error_description", "Authentication failed")
+        )
+
+    return result["access_token"]
+
+
+def execute_metadata_dax(query):
+
+    dataset_id = st.secrets["POWERBI_DATASET_ID"]
+
+    url = (
+        f"https://api.powerbi.com/v1.0/myorg/"
+        f"datasets/{dataset_id}/executeDaxQueries"
+    )
+
+    token = get_metadata_token()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "query": query,
+        "queryTimeout": 120
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=150
+    )
+
+    if not response.ok:
+        raise Exception(
+            f"Power BI API error {response.status_code}: "
+            f"{response.text[:3000]}"
+        )
+
+    # Convert Apache Arrow response into pandas DataFrame
+    stream = io.BytesIO(response.content)
+
+    reader = pa.ipc.open_stream(stream)
+
+    # Check for query errors even when HTTP status is 200
+    metadata = reader.schema.metadata or {}
+
+    if metadata.get(b"IsError") == b"true":
+        raise Exception(
+            metadata.get(b"FaultString", b"Metadata query failed").decode()
+        )
+
+    return reader.read_all().to_pandas()
+
 
 
 def get_tables():
-    return execute_dmv("""
-        SELECT [ID], [Name]
-        FROM $SYSTEM.TMSCHEMA_TABLES
+    return execute_metadata_dax("""
+        EVALUATE
+        INFO.VIEW.TABLES()
     """)
 
 
 def get_columns():
-    return execute_dmv("""
-        SELECT
-            [ID],
-            [TableID],
-            [ExplicitName],
-            [ExplicitDataType],
-            [Description],
-            [IsHidden],
-            [SourceColumn],
-            [FormatString]
-        FROM $SYSTEM.TMSCHEMA_COLUMNS
+    return execute_metadata_dax("""
+        EVALUATE
+        INFO.VIEW.COLUMNS()
     """)
 
 
 def get_measures():
-    return execute_dmv("""
-        SELECT
-            [ID],
-            [TableID],
-            [Name],
-            [Expression],
-            [FormatString]
-        FROM $SYSTEM.TMSCHEMA_MEASURES
+    return execute_metadata_dax("""
+        EVALUATE
+        INFO.VIEW.MEASURES()
     """)
+
 
 def get_relationships():
-    return execute_dmv("""
-        SELECT
-            [ID],
-            [FromTableID],
-            [FromColumnID],
-            [ToTableID],
-            [ToColumnID],
-            [IsActive],
-            [CrossFilteringBehavior],
-            [FromCardinality],
-            [ToCardinality]
-        FROM $SYSTEM.TMSCHEMA_RELATIONSHIPS
+    return execute_metadata_dax("""
+        EVALUATE
+        INFO.VIEW.RELATIONSHIPS()
     """)
-
-
-if __name__ == "__main__":
-
-    print("Extracting Power BI metadata...")
-
-    tables = get_tables()
-    print("Get Tables Comleted...")
-
-    columns = get_columns()
-    print("Get Columns Comleted...")
-
-    measures = get_measures()
-    print("Get Measures Comleted...")
-
-    relationships = get_relationships()
-    print("Get Relationships Comleted...")
-
-    tables.to_csv("tables.csv", index=False)
-    columns.to_csv("columns.csv", index=False)
-    measures.to_csv("measures.csv", index=False)
-    relationships.to_csv("relationships.csv", index=False)
-
-    print("Metadata extraction completed!")
-    print("Tables:", len(tables))
-    print("Columns:", len(columns))
-    print("Measures:", len(measures))
-    print("Relationships:", len(relationships))
-
-    print("TABLES:", tables.columns.tolist())
-    print("COLUMNS:", columns.columns.tolist())
-    print("MEASURES:", measures.columns.tolist())
-    print("RELATIONSHIPS:", relationships.columns.tolist())
